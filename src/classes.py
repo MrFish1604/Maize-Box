@@ -1,5 +1,13 @@
 import numpy as np
-from math import pow
+from numpy import cos, sin
+from math import pow, sqrt
+
+def integrer(a, v0, h):
+	v = np.zeros(np.shape(a))
+	v[0] = v0
+	for i in range(1, np.size(a, 0)):
+		v[i] = v[i-1] + h*a[i-1]
+	return v
 
 class World:
 	"""
@@ -11,6 +19,7 @@ class World:
 	step = 0
 	tfinal = 0
 	notinitialized = True
+	gravity = 9.81
 
 	@classmethod
 	def init(cls, plan=None):
@@ -54,13 +63,44 @@ class World:
 	def create_plan(cls, equaCart):
 		World.plans.append(Plan(equaCart))
 
+	@classmethod
+	def distPlan(cls, posi, iplan):
+		"""
+		Evalue delta d'une bille p/r au plan (pour l'instant il n'y en a qu'un et c'est un vrai plan)
+		"""
+		N = abs(np.dot(cls.plans[iplan].equa_cart, np.array([posi[0], posi[1], posi[2], 1])))
+		D = sqrt(np.dot(cls.plans[iplan].normal, cls.plans[iplan].normal))
+		return N/D
+	
+	@classmethod
+	def process(cls):
+		# Calc accels
+		for i in range(World.nbr_steps-1):
+			for maize in World.maizes:
+				posi = maize.getPosi(i)			# recupère la position de la bille à l'instant i
+				dplan = World.distPlan(posi, 0)		# calcule sa distance au plan
+				if dplan < maize.R:				# Si elle est dans le plan
+					delta = maize.R - dplan			# calcul delta
+					Kstar = 4*Maize.Estar*sqrt(maize.R*delta)/3
+					accel = (Kstar*delta/maize.masse)*np.array([cos(World.plans[0].theta)*sin(World.plans[0].psi), cos(World.plans[0].theta)*cos(World.plans[0].psi), sin(World.plans[0].theta)]) - np.array([0, World.gravity, 0])
+				else:
+					accel = np.array([0, -World.gravity, 0])
+				maize.setAccels(accel, i)
+		# Calc vits
+		for maize in World.maizes:
+			maize.velocities = integrer(maize.accels, maize.getVel(0), World.step)
+			maize.positions = integrer(maize.velocities, maize.getPosi(0), World.step)
+
 class Plan:
 	"""
 	Représente un plan
+	!!! Il faudra changer tout ca !!!
 	"""
 	def __init__(self, equaCart):
 		self.equa_cart = equaCart
 		self.normal = np.array([equaCart[0], equaCart[1], equaCart[2]])
+		self.psi = 0		# Faudrat les calculer, ou inverser le truc
+		self.theta = 0		# Faudrat les calculer, ou inverser le truc
 	def __str__(self):
 		return str(self.equa_cart[0]) + "x + " + str(self.equa_cart[1]) + "y + " + str(self.equa_cart[2]) + "z + " + str(self.equa_cart[3]) + " = 0"
 	def __repr__(self):
@@ -102,11 +142,35 @@ class Maize:
 	def setInit(self, pos, vits):
 		self.positions[0] = pos
 		self.velocities[0] = vits
+	
+	def getPosi(self, i):
+		return self.positions[i]
+	def getVel(self, i):
+		return self.velocities[i]
+	def getAccel(self, i):
+		return self.accels[i]
+
+	def setAccels(self, accel, i):
+		"""
+		Set la i-eme ligne d'accels
+		"""
+		self.accels[i] = accel		
 
 World.init(Plan(np.array([0,1,0,0])))
-World.setTime(1, tf=5)
+World.setTime(h=0.1, tf=5)
 World.create_Maizes(1)
 
 maize = World.maizes[0]
 maize.setInit(np.array([0, 1, 0]), np.array([0,0,0]))
+World.process()
+
+import matplotlib.pyplot as plt
+
+X = maize.positions[:, 0]
+Y = maize.positions[:, 1]
+
+for i in range(np.size(X, 0)):
+	plt.plot(X[i], Y[i], "o", color=(i%100/100, 0, 0))
+plt.grid()
+plt.show()
 
