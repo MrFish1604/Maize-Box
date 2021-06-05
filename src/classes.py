@@ -157,20 +157,32 @@ class Maize:
 		self.accels[i] = accel		
 
 World.init(Plan(np.array([0,1,0,0])))
-World.setTime(h=0.1, tf=5)
+World.setTime(h=0.01, tf=2)
 World.create_Maizes(1)
 
 maize = World.maizes[0]
 maize.setInit(np.array([0, 1, 0]), np.array([0,0,0]))
 World.process()
 
+print(World.step)
+print(World.nbr_steps)
+print(World.tfinal)
+
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 
 X = maize.positions[:, 0]
 Y = maize.positions[:, 1]
 
-for i in range(np.size(X, 0)):
-	plt.plot(X[i], Y[i], "o", color=(i%100/100, 0, 0))
-plt.grid()
-plt.show()
+fig = plt.figure()
 
+bille, = plt.plot(X[0], Y[0], "o", color=(0%100/100, 0, 0))
+
+def animate(i):
+	# plt.plot(X[i], Y[i], "o", color=(i%100/100, 0, 0))
+	bille.set_data(X[i], Y[i])
+	return bille
+
+ani = FuncAnimation(fig, animate, interval=World.step*1000)
+
+plt.show()
