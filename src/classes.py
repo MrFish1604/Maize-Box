@@ -2,13 +2,6 @@ import numpy as np
 from numpy import cos, sin
 from math import pow, sqrt
 
-def integrer(a, v0, h):
-	v = np.zeros(np.shape(a))
-	v[0] = v0
-	for i in range(1, np.size(a, 0)):
-		v[i] = v[i-1] + h*a[i-1]
-	return v
-
 class World:
 	"""
 	This class should represent the world where balls will evolve.
@@ -53,7 +46,7 @@ class World:
 			else:	#if h==None
 				World.tfinal = tf
 				World.nbr_steps = nh
-				World.step = int(th/nh)
+				World.step = int(tf/nh)
 
 	@classmethod	
 	def create_Maizes(cls, nbr):
@@ -66,9 +59,9 @@ class World:
 	@classmethod
 	def distPlan(cls, posi, iplan):
 		"""
-		Evalue delta d'une bille p/r au plan (pour l'instant il n'y en a qu'un et c'est un vrai plan)
+		Evalue la distance d'une bille au plan (pour l'instant il n'y en a qu'un et c'est un vrai plan)
 		"""
-		N = abs(np.dot(cls.plans[iplan].equa_cart, np.array([posi[0], posi[1], posi[2], 1])))
+		N = (np.dot(cls.plans[iplan].equa_cart, np.array([posi[0], posi[1], posi[2], 1])))
 		D = sqrt(np.dot(cls.plans[iplan].normal, cls.plans[iplan].normal))
 		return N/D
 	
@@ -80,16 +73,21 @@ class World:
 				posi = maize.getPosi(i)			# recupère la position de la bille à l'instant i
 				dplan = World.distPlan(posi, 0)		# calcule sa distance au plan
 				if dplan < maize.R:				# Si elle est dans le plan
+					# print(dplan)
 					delta = maize.R - dplan			# calcul delta
 					Kstar = 4*Maize.Estar*sqrt(maize.R*delta)/3
 					accel = (Kstar*delta/maize.masse)*np.array([cos(World.plans[0].theta)*sin(World.plans[0].psi), cos(World.plans[0].theta)*cos(World.plans[0].psi), sin(World.plans[0].theta)]) - np.array([0, World.gravity, 0])
 				else:
 					accel = np.array([0, -World.gravity, 0])
-				maize.setAccels(accel, i)
-		# Calc vits
-		for maize in World.maizes:
-			maize.velocities = integrer(maize.accels, maize.getVel(0), World.step)
-			maize.positions = integrer(maize.velocities, maize.getPosi(0), World.step)
+				velocity = maize.velocities[i] + World.step*accel
+				position = maize.positions[i] + World.step*velocity
+				maize.setAccel(accel, i)
+				maize.setVel(velocity, i+1)
+				maize.setPosi(position, i+1)
+				# print(maize.getAccel(i))
+				# print(maize.getVel(i))
+				# print(maize.getPosi(i))
+				# input()
 
 class Plan:
 	"""
@@ -149,24 +147,31 @@ class Maize:
 		return self.velocities[i]
 	def getAccel(self, i):
 		return self.accels[i]
-
-	def setAccels(self, accel, i):
+	
+	def setPosi(self, posi, i):
+		self.positions[i] = posi
+	def setVel(self, vel, i):
+		self.velocities[i] = vel
+	def setAccel(self, accel, i):
 		"""
 		Set la i-eme ligne d'accels
 		"""
-		self.accels[i] = accel		
+		self.accels[i] = accel
 
 World.init(Plan(np.array([0,1,0,0])))
 World.setTime(h=0.01, tf=2)
 World.create_Maizes(1)
 
 maize = World.maizes[0]
-maize.setInit(np.array([0, 1, 0]), np.array([0,0,0]))
+maize.setInit(np.array([0, 0.2, 0]), np.array([0,0,0]))
 World.process()
 
 print(World.step)
 print(World.nbr_steps)
 print(World.tfinal)
+
+print()
+print(maize.R)
 
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
@@ -176,13 +181,23 @@ Y = maize.positions[:, 1]
 
 fig = plt.figure()
 
-bille, = plt.plot(X[0], Y[0], "o", color=(0%100/100, 0, 0))
+plt.plot([-0.3, 0.3], [0, 0], "-k")
+plt.axis("equal")
+
+bille = plt.Circle((X[0], Y[0]), radius=maize.R)
+
+def init_a():
+	plt.gca().add_patch(bille)
 
 def animate(i):
-	# plt.plot(X[i], Y[i], "o", color=(i%100/100, 0, 0))
-	bille.set_data(X[i], Y[i])
+	if i<np.size(X,0):
+		bille.center = (X[i], Y[i])
 	return bille
 
-ani = FuncAnimation(fig, animate, interval=World.step*1000)
+hms = World.step*1000
+ani = FuncAnimation(fig, animate, init_func=init_a, interval=World.step*1000)
 
 plt.show()
+
+# print("\n")
+# print(maize.accels)
