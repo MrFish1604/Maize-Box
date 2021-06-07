@@ -70,6 +70,9 @@ class World:
 	def process(cls):
 		# Calc accels
 		for i in range(World.nbr_steps-1):
+			percent = 100*i/World.nbr_steps
+			if percent%10==0:
+				print(str(percent)+"%")
 			for maize in World.maizes:
 				posi = maize.getPosi(i)			# recupère la position de la bille à l'instant i
 				dplan = World.distPlan(posi, 0)		# calcule sa distance au plan
@@ -167,12 +170,12 @@ maize = World.maizes[0]
 maize.setInit(np.array([0, 0.2, 0]), np.array([0.1,0,0]))
 World.process()
 
-print(World.step)
-print(World.nbr_steps)
-print(World.tfinal)
-
-print()
-print(maize.R)
+# print(World.step)
+# print(World.nbr_steps)
+# print(World.tfinal)
+# 
+# print()
+# print(maize.R)
 
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
@@ -192,10 +195,10 @@ ani_h = 50
 nbr_frames = int(World.tfinal*ani_h*1000)
 new_h = int(ani_h*0.001/World.step)
 
-print()
-print("nbr_frames", nbr_frames)
-print("World.nbr_steps", World.nbr_steps)
-print("new_h", new_h)
+# print()
+# print("nbr_frames", nbr_frames)
+# print("World.nbr_steps", World.nbr_steps)
+# print("new_h", new_h)
 
 from time import time
 World.t0 = 0
