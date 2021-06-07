@@ -13,6 +13,7 @@ class World:
 	tfinal = 0
 	notinitialized = True
 	gravity = 9.81
+	t0 = 0
 
 	@classmethod
 	def init(cls, plan=None):
@@ -116,7 +117,7 @@ class Maize:
 	"""
 	ro = 1180	# kg/m3
 	coef_resti_contact = 0.5
-	young = 340
+	young = 340e6
 	fm = 0.86
 	fa = 0.54
 	poisson = 0.3
@@ -159,11 +160,11 @@ class Maize:
 		self.accels[i] = accel
 
 World.init(Plan(np.array([0,1,0,0])))
-World.setTime(h=0.01, tf=2)
+World.setTime(h=0.000001, tf=2)
 World.create_Maizes(1)
 
 maize = World.maizes[0]
-maize.setInit(np.array([0, 0.2, 0]), np.array([0,0,0]))
+maize.setInit(np.array([0, 0.2, 0]), np.array([0.1,0,0]))
 World.process()
 
 print(World.step)
@@ -181,22 +182,43 @@ Y = maize.positions[:, 1]
 
 fig = plt.figure()
 
-plt.plot([-0.3, 0.3], [0, 0], "-k")
+plt.plot([0, 1], [0, 0], "-k")
 plt.axis("equal")
 
 bille = plt.Circle((X[0], Y[0]), radius=maize.R)
+
+ani_h = 50
+
+nbr_frames = int(World.tfinal*ani_h*1000)
+new_h = int(ani_h*0.001/World.step)
+
+print()
+print("nbr_frames", nbr_frames)
+print("World.nbr_steps", World.nbr_steps)
+print("new_h", new_h)
+
+from time import time
+World.t0 = 0
 
 def init_a():
 	plt.gca().add_patch(bille)
 
 def animate(i):
-	if i<np.size(X,0):
-		bille.center = (X[i], Y[i])
+	j = new_h*i
+	if j<np.size(X,0):
+		bille.center = (X[j], Y[j])
+	t = time()
+	print(t - World.t0)
+	World.t0 = t
 	return bille
 
 hms = World.step*1000
-ani = FuncAnimation(fig, animate, init_func=init_a, interval=World.step*1000)
+# if World.step<0.001:
+ani = FuncAnimation(fig, animate, init_func=init_a, interval=ani_h, frames=nbr_frames)
+# else:
+	# ani = FuncAnimation(fig, animate, init_func=init_a, interval=World.step*1000, frames=World.nbr_steps)
 
+t0 = time()
 plt.show()
 
 # print("\n")
