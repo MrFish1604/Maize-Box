@@ -100,7 +100,7 @@ class World:
 				file.write('\n')
 				percent = int(100*i/World.nbr_steps)
 				if percent==pcs:
-					print(str(int(percent))+"%")
+					print(str(percent)+"%")
 					pcs+=10
 				posi = maize.getPosi(i)			# recupère la position de la bille à l'instant i
 				dplan = World.distPlan(posi, 0)		# calcule sa distance au plan
@@ -119,41 +119,51 @@ class World:
 				# Save vectors
 				file.write(str(i*World.step))
 				for v in [accel, velocity, position]:
-					for i in range(2):
+					for j in range(2):
 						file.write('\t')
-						file.write(str(v[i]))
+						file.write(str(v[j]))
 		print("100%")
 	@classmethod
 	def process2(cls):
+		pcs = 10
 		for i in range(World.nbr_steps-1):
-			percent = 100*i/World.nbr_steps
-			if percent%10<=0.0001:
-				print(str(int(percent))+"%")
-			for maize in World.maizes:
-				posi = maize.getPosi(i)			# recupère la position de la bille à l'instant i
-				dplan = World.distPlan(posi, 0)		# calcule sa distance au plan
-				if dplan < maize.R:				# Si elle est dans le plan
-					# print(dplan)
-					delta = maize.R - dplan			# calcul delta
-					Kstar = 4*Maize.Estar*sqrt(maize.R*delta)/3
-					accel = (Kstar*delta/maize.masse)*np.array([cos(World.plans[0].theta)*sin(World.plans[0].psi), cos(World.plans[0].theta)*cos(World.plans[0].psi), sin(World.plans[0].theta)]) - np.array([0, World.gravity, 0])
-				else:
-					accel = np.array([0, -World.gravity, 0])
-				velocity = maize.velocities[i] + World.step*accel
-				position = maize.positions[i] + World.step*velocity
-				maize.setAccel(accel, i)
-				maize.setVel(velocity, i+1)
-				maize.setPosi(position, i+1)
-				# print(maize.getAccel(i))
-				# print(maize.getVel(i))
-				# print(maize.getPosi(i))
-				# input()
+			with open(World.save_path + "/save." + str(i) + ".tsv", 'w') as file:
+				percent = int(100*i/World.nbr_steps)
+				if percent==pcs:
+					print(str(percent)+"%")
+					pcs+=10
+				file.write("Temps(s)\tax\tay\taz\tvx\tvy\tvz\tx\ty\tz")
+				for maize in World.maizes:
+					file.write('\n')
+					posi = maize.getPosi(i)			# recupère la position de la bille à l'instant i
+					dplan = World.distPlan(posi, 0)		# calcule sa distance au plan
+					if dplan < maize.R:				# Si elle est dans le plan
+						# print(dplan)
+						delta = maize.R - dplan			# calcul delta
+						Kstar = 4*Maize.Estar*sqrt(maize.R*delta)/3
+						accel = (Kstar*delta/maize.masse)*np.array([cos(World.plans[0].theta)*sin(World.plans[0].psi), cos(World.plans[0].theta)*cos(World.plans[0].psi), sin(World.plans[0].theta)]) - np.array([0, World.gravity, 0])
+					else:
+						accel = np.array([0, -World.gravity, 0])
+					velocity = maize.velocities[i] + World.step*accel
+					position = maize.positions[i] + World.step*velocity
+					maize.setAccel(accel, i)
+					maize.setVel(velocity, i+1)
+					maize.setPosi(position, i+1)
+					file.write(str(maize.id))
+					file.write('\t')
+					for v in [accel, velocity, position]:
+						for j in range(2):
+							file.write('\t')
+							file.write(str(v[j]))
+		print("100%")
 	@classmethod
 	def processNS(cls):
+		pcs = 10
 		for i in range(World.nbr_steps-1):
-			percent = 100*i/World.nbr_steps
-			if percent%10<=0.0001:
-				print(str(int(percent))+"%")
+			percent = int(100*i/World.nbr_steps)
+			if percent==pcs:
+				print(str(percent)+"%")
+				pcs+=10
 			for maize in World.maizes:
 				posi = maize.getPosi(i)			# recupère la position de la bille à l'instant i
 				dplan = World.distPlan(posi, 0)		# calcule sa distance au plan
@@ -169,17 +179,14 @@ class World:
 				maize.setAccel(accel, i)
 				maize.setVel(velocity, i+1)
 				maize.setPosi(position, i+1)
-				# print(maize.getAccel(i))
-				# print(maize.getVel(i))
-				# print(maize.getPosi(i))
-				# input()
+		print("100%")
 	@classmethod
 	def process(cls):
 		if World.save_inited:
 			if World.nbr_Maizes==1:
 				World.process1()
 			else:
-				Wordl.process2()
+				World.process2()
 		else:
 			print("The world will not be saved")
 			World.processNS()
@@ -215,6 +222,7 @@ class Maize:
 	fm = 0.86
 	fa = 0.54
 	poisson = 0.3
+	next_id = 0
 
 	def __init__(self, pos, vits, R=0.005):
 		"""
@@ -231,6 +239,8 @@ class Maize:
 		self.vol = (4/3)*np.pi*pow(R, 3)
 		self.masse = self.vol*self.ro
 		Maize.Estar = Maize.young/(2-2*pow(Maize.poisson, 2))
+		self.id = Maize.next_id
+		Maize.next_id+=1
 	
 	def setInit(self, pos, vits):
 		self.positions[0] = pos
@@ -255,10 +265,11 @@ class Maize:
 
 World.init(Plan(np.array([0,1,0,0])))
 World.setTime(h=0.001, tf=5)
-World.create_Maizes(1)
+World.create_Maizes(2)
 
 maize = World.maizes[0]
 maize.setInit(np.array([0, 0.2, 0]), np.array([0.1,0,0]))
+World.maizes[1].setInit(np.array([0, 0.3, 0]), np.array([0.2,0,0]))
 
 World.init_save("simus", "test0")
 World.process()
