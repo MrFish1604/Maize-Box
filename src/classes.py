@@ -71,8 +71,8 @@ class World:
 		# Calc accels
 		for i in range(World.nbr_steps-1):
 			percent = 100*i/World.nbr_steps
-			if percent%10==0:
-				print(str(percent)+"%")
+			if percent%10<=0.0001:
+				print(str(int(percent))+"%")
 			for maize in World.maizes:
 				posi = maize.getPosi(i)			# recupère la position de la bille à l'instant i
 				dplan = World.distPlan(posi, 0)		# calcule sa distance au plan
@@ -163,11 +163,12 @@ class Maize:
 		self.accels[i] = accel
 
 World.init(Plan(np.array([0,1,0,0])))
-World.setTime(h=0.000001, tf=2)
-World.create_Maizes(1)
+World.setTime(h=0.00001, tf=5)
+World.create_Maizes(2)
 
 maize = World.maizes[0]
 maize.setInit(np.array([0, 0.2, 0]), np.array([0.1,0,0]))
+World.maizes[1].setInit(np.array([0, 0.3, 0]), np.array([0.2, 0, 0]))
 World.process()
 
 # print(World.step)
@@ -183,12 +184,16 @@ from matplotlib.animation import FuncAnimation
 X = maize.positions[:, 0]
 Y = maize.positions[:, 1]
 
+X2 = World.maizes[1].positions[:, 0]
+Y2 = World.maizes[1].positions[:, 1]
+
 fig = plt.figure()
 
 plt.plot([0, 1], [0, 0], "-k")
 plt.axis("equal")
 
 bille = plt.Circle((X[0], Y[0]), radius=maize.R)
+bille2 = plt.Circle((X2[0], Y2[0]), radius=maize.R)
 
 ani_h = 50
 
@@ -202,26 +207,29 @@ new_h = int(ani_h*0.001/World.step)
 
 from time import time
 World.t0 = 0
+# ts = [0]*nbr_frames
 
 def init_a():
 	plt.gca().add_patch(bille)
+	plt.gca().add_patch(bille2)
 
 def animate(i):
 	j = new_h*i
 	if j<np.size(X,0):
 		bille.center = (X[j], Y[j])
-	t = time()
-	print(t - World.t0)
-	World.t0 = t
+		bille2.center = (X2[j], Y2[j])
+	# t = time()
+	# ts[i] = t - World.t0
+	# World.t0 = t
 	return bille
 
 hms = World.step*1000
 # if World.step<0.001:
 ani = FuncAnimation(fig, animate, init_func=init_a, interval=ani_h, frames=nbr_frames)
 # else:
-	# ani = FuncAnimation(fig, animate, init_func=init_a, interval=World.step*1000, frames=World.nbr_steps)
+# ani = FuncAnimation(fig, animate, init_func=init_a, interval=World.step*1000, frames=World.nbr_steps)
 
-t0 = time()
+input("Press enter to display...")
 plt.show()
 
 # print("\n")
