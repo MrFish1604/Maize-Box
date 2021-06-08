@@ -36,13 +36,17 @@ class World:
 		Initialise la méthode de sauvegarde de la simulation
 		Doit être utilisé après la création des maizes
 		"""
-		World.save_path = os.path.abspath(path)
+		World.save_path = os.path.abspath(path) + "/" + name
 		if os.path.isfile(World.save_path):
 			print("Specify a directory")
 		elif not os.path.isdir(World.save_path):
 			os.makedirs(World.save_path)
-		with open(World.save_path + "/" + name + ".conf", 'w') as file:
-			file.write("maizes=" + str(World.nbr_Maizes) + ";")
+		with open(World.save_path + "/World.conf", 'w') as file:
+			file.write("maizes=" + str(World.nbr_Maizes) + ";\n")
+			file.write("tfinal=" + str(World.tfinal) + ";\n")
+			file.write("step=" + str(World.step) + ";")
+			# Rajouter la box
+		World.save_inited = True
 		
 
 
@@ -91,11 +95,13 @@ class World:
 		with open(World.save_path + "/save.tsv", 'w') as file:
 			maize = World.maizes[0]
 			file.write("Temps(s)\tax\tay\taz\tvx\tvy\tvz\tx\ty\tz")
+			pcs = 10
 			for i in range(World.nbr_steps-1):
 				file.write('\n')
-				percent = 100*i/World.nbr_steps
-				if percent%10<=0.0001:
+				percent = int(100*i/World.nbr_steps)
+				if percent==pcs:
 					print(str(int(percent))+"%")
+					pcs+=10
 				posi = maize.getPosi(i)			# recupère la position de la bille à l'instant i
 				dplan = World.distPlan(posi, 0)		# calcule sa distance au plan
 				if dplan < maize.R:				# Si elle est dans le plan
@@ -116,6 +122,7 @@ class World:
 					for i in range(2):
 						file.write('\t')
 						file.write(str(v[i]))
+		print("100%")
 	@classmethod
 	def process2(cls):
 		for i in range(World.nbr_steps-1):
@@ -142,11 +149,40 @@ class World:
 				# print(maize.getPosi(i))
 				# input()
 	@classmethod
+	def processNS(cls):
+		for i in range(World.nbr_steps-1):
+			percent = 100*i/World.nbr_steps
+			if percent%10<=0.0001:
+				print(str(int(percent))+"%")
+			for maize in World.maizes:
+				posi = maize.getPosi(i)			# recupère la position de la bille à l'instant i
+				dplan = World.distPlan(posi, 0)		# calcule sa distance au plan
+				if dplan < maize.R:				# Si elle est dans le plan
+					# print(dplan)
+					delta = maize.R - dplan			# calcul delta
+					Kstar = 4*Maize.Estar*sqrt(maize.R*delta)/3
+					accel = (Kstar*delta/maize.masse)*np.array([cos(World.plans[0].theta)*sin(World.plans[0].psi), cos(World.plans[0].theta)*cos(World.plans[0].psi), sin(World.plans[0].theta)]) - np.array([0, World.gravity, 0])
+				else:
+					accel = np.array([0, -World.gravity, 0])
+				velocity = maize.velocities[i] + World.step*accel
+				position = maize.positions[i] + World.step*velocity
+				maize.setAccel(accel, i)
+				maize.setVel(velocity, i+1)
+				maize.setPosi(position, i+1)
+				# print(maize.getAccel(i))
+				# print(maize.getVel(i))
+				# print(maize.getPosi(i))
+				# input()
+	@classmethod
 	def process(cls):
-		if World.nbr_Maizes==1:
-			World.process1()
+		if World.save_inited:
+			if World.nbr_Maizes==1:
+				World.process1()
+			else:
+				Wordl.process2()
 		else:
-			Wordl.process2()
+			print("The world will not be saved")
+			World.processNS()
 
 class Plan:
 	"""
@@ -226,67 +262,3 @@ maize.setInit(np.array([0, 0.2, 0]), np.array([0.1,0,0]))
 
 World.init_save("simus", "test0")
 World.process()
-
-# print(World.step)
-# print(World.nbr_steps)
-# print(World.tfinal)
-# 
-# print()
-# print(maize.R)
-
-# import matplotlib.pyplot as plt
-# from matplotlib.animation import FuncAnimation
-
-# X = maize.positions[:, 0]
-# Y = maize.positions[:, 1]
-
-# X2 = World.maizes[1].positions[:, 0]
-# Y2 = World.maizes[1].positions[:, 1]
-
-# fig = plt.figure()
-
-# plt.plot([0, 1], [0, 0], "-k")
-# plt.axis("equal")
-
-# bille = plt.Circle((X[0], Y[0]), radius=maize.R)
-# bille2 = plt.Circle((X2[0], Y2[0]), radius=maize.R)
-
-# ani_h = 50
-
-# nbr_frames = int(World.tfinal*ani_h*1000)
-# new_h = int(ani_h*0.001/World.step)
-
-# # print()
-# # print("nbr_frames", nbr_frames)
-# # print("World.nbr_steps", World.nbr_steps)
-# # print("new_h", new_h)
-
-# from time import time
-# World.t0 = 0
-# # ts = [0]*nbr_frames
-
-# def init_a():
-# 	plt.gca().add_patch(bille)
-# 	plt.gca().add_patch(bille2)
-
-# def animate(i):
-# 	j = new_h*i
-# 	if j<np.size(X,0):
-# 		bille.center = (X[j], Y[j])
-# 		bille2.center = (X2[j], Y2[j])
-# 	# t = time()
-# 	# ts[i] = t - World.t0
-# 	# World.t0 = t
-# 	return bille
-
-# hms = World.step*1000
-# # if World.step<0.001:
-# ani = FuncAnimation(fig, animate, init_func=init_a, interval=ani_h, frames=nbr_frames)
-# # else:
-# # ani = FuncAnimation(fig, animate, init_func=init_a, interval=World.step*1000, frames=World.nbr_steps)
-
-# input("Press enter to display...")
-# plt.show()
-
-# # print("\n")
-# # print(maize.accels)
