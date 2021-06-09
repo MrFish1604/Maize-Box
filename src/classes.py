@@ -47,6 +47,26 @@ class World:
 			file.write("step=" + str(World.step) + ";")
 			# Rajouter la box
 		World.save_inited = True
+	
+	@classmethod
+	def load_save(cls, path):
+		if os.path.isdir(path):
+			World.save_path = os.path.abspath(path)
+			content = ""
+			with open(path+"/World.conf") as file:
+				content = file.read()
+			content = content.replace('\n', '')
+			lines = content.split(';')
+			conf = dict()
+			for line in lines:
+				if len(line)>0:
+					buff = line.split('=')
+					conf[buff[0]]=float(buff[1])
+			World.setTime(h=conf["step"], tf=conf["tfinal"])
+			World.create_Maizes(conf["maizes"])
+			return True
+		else:
+			return False
 		
 
 
@@ -74,8 +94,8 @@ class World:
 
 	@classmethod	
 	def create_Maizes(cls, nbr):
-		World.nbr_Maizes = nbr
-		World.maizes = [Maize(np.array([0,0,0]), np.array([0,0,0])) for i in range(nbr)]
+		World.nbr_Maizes = int(nbr)		# Pour etre de bien avoir un integer
+		World.maizes = [Maize(np.array([0,0,0]), np.array([0,0,0])) for i in range(World.nbr_Maizes)]
 	@classmethod
 	def create_plan(cls, equaCart):
 		World.plans.append(Plan(equaCart))
@@ -263,13 +283,19 @@ class Maize:
 		"""
 		self.accels[i] = accel
 
-World.init(Plan(np.array([0,1,0,0])))
-World.setTime(h=0.001, tf=5)
-World.create_Maizes(2)
+# World.init(Plan(np.array([0,1,0,0])))
+# World.setTime(h=0.001, tf=5)
+# World.create_Maizes(1)
+# 
+# maize = World.maizes[0]
+# maize.setInit(np.array([0, 0.2, 0]), np.array([0.1,0,0]))
+# World.maizes[1].setInit(np.array([0, 0.3, 0]), np.array([0.2,0,0]))
+# 
+# World.init_save("simus", "test0")
+# World.process()
 
-maize = World.maizes[0]
-maize.setInit(np.array([0, 0.2, 0]), np.array([0.1,0,0]))
-World.maizes[1].setInit(np.array([0, 0.3, 0]), np.array([0.2,0,0]))
-
-World.init_save("simus", "test0")
-World.process()
+World.load_save("simus/test0")
+print(World.tfinal)
+print(World.step)
+print(World.nbr_steps)
+print(World.nbr_Maizes)
