@@ -64,6 +64,22 @@ class World:
 					conf[buff[0]]=float(buff[1])
 			World.setTime(h=conf["step"], tf=conf["tfinal"])
 			World.create_Maizes(conf["maizes"])
+			if World.nbr_Maizes==0:
+				return False
+			elif World.nbr_Maizes==1:
+				content = ""
+				with open(World.save_path + "/save.tsv") as file:
+					content = file.read()
+				lines = content.split('\n')
+				maize = World.maizes[0]
+				buff = lines[0].split('\t')
+				for i in range(1, len(lines)):
+					buff = lines[i].split('\t')
+					maize.setAccel(np.array(buff[1:4]), i)
+					maize.setVel(np.array(buff[4:7]), i)
+					maize.setPosi(np.array(buff[7:]), i)
+			else:
+				pass
 			return True
 		else:
 			return False
@@ -139,7 +155,7 @@ class World:
 				# Save vectors
 				file.write(str(i*World.step))
 				for v in [accel, velocity, position]:
-					for j in range(2):
+					for j in range(3):
 						file.write('\t')
 						file.write(str(v[j]))
 		print("100%")
@@ -289,8 +305,8 @@ class Maize:
 # 
 # maize = World.maizes[0]
 # maize.setInit(np.array([0, 0.2, 0]), np.array([0.1,0,0]))
-# World.maizes[1].setInit(np.array([0, 0.3, 0]), np.array([0.2,0,0]))
 # 
+# World.maizes[1].setInit(np.array([0, 0.3, 0]), np.array([0.2,0,0]))
 # World.init_save("simus", "test0")
 # World.process()
 
