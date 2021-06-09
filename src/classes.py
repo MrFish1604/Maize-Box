@@ -300,7 +300,7 @@ class Maize:
 		self.accels[i] = accel
 
 # World.init(Plan(np.array([0,1,0,0])))
-# World.setTime(h=0.001, tf=5)
+# World.setTime(h=0.00001, tf=5)
 # World.create_Maizes(1)
 # 
 # maize = World.maizes[0]
@@ -315,3 +315,62 @@ print(World.tfinal)
 print(World.step)
 print(World.nbr_steps)
 print(World.nbr_Maizes)
+
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+
+maize = World.maizes[0]
+
+X = maize.positions[:, 0]
+Y = maize.positions[:, 1]
+
+# X2 = World.maizes[1].positions[:, 0]
+# Y2 = World.maizes[1].positions[:, 1]
+
+fig = plt.figure()
+
+plt.plot([0, 1], [0, 0], "-k")
+plt.axis("equal")
+
+bille = plt.Circle((X[0], Y[0]), radius=maize.R)
+# bille2 = plt.Circle((X2[0], Y2[0]), radius=maize.R)
+
+ani_h = 50
+
+nbr_frames = int(World.tfinal*ani_h*1000)
+new_h = int(ani_h*0.001/World.step)
+
+# print()
+# print("nbr_frames", nbr_frames)
+# print("World.nbr_steps", World.nbr_steps)
+# print("new_h", new_h)
+
+from time import time
+World.t0 = 0
+# ts = [0]*nbr_frames
+
+def init_a():
+	plt.gca().add_patch(bille)
+	# plt.gca().add_patch(bille2)
+
+def animate(i):
+	j = new_h*i
+	if j<np.size(X,0):
+		bille.center = (X[j], Y[j])
+		# bille2.center = (X2[j], Y2[j])
+	# t = time()
+	# ts[i] = t - World.t0
+	# World.t0 = t
+	return bille
+
+hms = World.step*1000
+# if World.step<0.001:
+ani = FuncAnimation(fig, animate, init_func=init_a, interval=ani_h, frames=nbr_frames)
+# else:
+# ani = FuncAnimation(fig, animate, init_func=init_a, interval=World.step*1000, frames=World.nbr_steps)
+
+input("Press enter to display...")
+plt.show()
+
+# print("\n")
+# print(maize.accels)
