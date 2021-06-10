@@ -2,6 +2,14 @@ import numpy as np
 from numpy import cos, sin, array
 from math import pow, sqrt
 
+def distPlan(cls, posi, plan):
+		"""
+		Evalue la distance d'une bille au plan (pour l'instant il n'y en a qu'un et c'est un vrai plan)
+		"""
+		N = (np.dot(plan.equa, array([posi[0], posi[1], posi[2], 1])))
+		D = sqrt(np.dot(plan.normal, plan.normal))
+		return N/D
+
 class World:
 	"""
 	This class should represent the world where balls will evolve.
@@ -120,14 +128,21 @@ class Plan:
 		self.calc_equa()
 	
 	def set_rota(self, psi, theta):
+		"""
+		Modifie les angles et calcul les équations
+		"""
 		self.theta = theta
 		self.point = point
 		self.calc_equa()
 	
 	def calc_equa(self):
+		"""
+		Calcul les equations du plan
+		"""
 		self.normal = array([-cos(self.theta)*sin(self.psi), cos(self.theta)*cos(self.psi), sin(self.theta)])
 		self.d = np.dot(-self.normal, self.point)
 		self.equa = array([self.normal[0], self.normal[1], self.normal[2], self.d])
+		
 	def show2D(self, size, style="-k"):
 		x1 = self.point[0] - size*cos(self.psi)
 		y1 = self.point[1] - size*sin(self.psi)
@@ -154,20 +169,31 @@ class Maize:
 		self.positions = np.zeros((World.nbr_steps, 3))
 		self.velocities = np.zeros((World.nbr_steps, 3))
 		self.accels = np.zeros((World.nbr_steps, 3))
-		self.sum_F = np.zeros((World.nbr_steps, 3))
+		self.sum_F = np.ones((World.nbr_steps, 3))*np.array([0, -World.gravity*self.masse, 0])
 		self.positions[0] = pos
 		self.velocities[0] = vits
 		self.R = 0.005
+		self.Rstar = self.R/2
 		self.vol = (4/3)*np.pi*pow(R, 3)
 		self.masse = self.vol*self.ro
 		Maize.Estar = Maize.young/(2-2*pow(Maize.poisson, 2))
 	
-	def PFD(self):
+	def PFD(self, i):
 		"""
 		Cherche les forces qui agissent sur la bille
 		"""
-		# Cherche les plans
-	
+		posi = self.positions[i]
+		# Recherche les plans	
+		for plan in World.plans:
+			dist = distPlan(posi, plan)
+			if dist<self.R:
+				delta = dist-self.R
+				self.sum_F[i] += 4*self.Estar*delta*sqrt(self.R*delta)*plan.normal
+		# Amortissement
+		# Recherche les contact avec d'autres bille
+		# Frottements
+		self.accels[i] = self.sum_F[i]/self.masse
+
 	def setInit(self, pos, vits):
 		self.positions[0] = pos
 		self.velocities[0] = vits
