@@ -2,7 +2,7 @@ import numpy as np
 from numpy import cos, sin, array
 from math import pow, sqrt
 
-def distPlan(cls, posi, plan):
+def distPlan(posi, plan):
 		"""
 		Evalue la distance d'une bille au plan (pour l'instant il n'y en a qu'un et c'est un vrai plan)
 		"""
@@ -86,32 +86,14 @@ class World:
 	@classmethod
 	def process(cls):
 		# Calc accels
-		next_percent = 10
 		for i in range(World.nbr_steps-1):
-			percent = int(100*i/World.nbr_steps)
-			if percent==next_percent:
-				print(str(percent)+"%")
-				next_percent+=10
+			percent = 100*i/World.nbr_steps
+			if percent%10<=0.0001:
+				print(str(int(percent))+"%")
 			for maize in World.maizes:
-				posi = maize.getPosi(i)			# recupère la position de la bille à l'instant i
-				dplan = World.distPlan(posi, 0)		# calcule sa distance au plan
-				if dplan < maize.R:				# Si elle est dans le plan
-					# print(dplan)
-					delta = maize.R - dplan			# calcul delta
-					Kstar = 4*Maize.Estar*sqrt(maize.R*delta)/3
-					accel = (Kstar*delta/maize.masse)*array([cos(World.plans[0].theta)*sin(World.plans[0].psi), cos(World.plans[0].theta)*cos(World.plans[0].psi), sin(World.plans[0].theta)]) - array([0, World.gravity, 0])
-				else:
-					accel = array([0, -World.gravity, 0])
-				velocity = maize.velocities[i] + World.step*accel
-				position = maize.positions[i] + World.step*velocity
-				maize.setAccel(accel, i)
-				maize.setVel(velocity, i+1)
-				maize.setPosi(position, i+1)
-				# print(maize.getAccel(i))
-				# print(maize.getVel(i))
-				# print(maize.getPosi(i))
-				# input()
-		print("100%")
+				maize.PFD(i)
+				maize.calcVel(i+1)
+				maize.calcPosi(i+1)
 
 class Plan:
 	"""
@@ -169,13 +151,13 @@ class Maize:
 		self.positions = np.zeros((World.nbr_steps, 3))
 		self.velocities = np.zeros((World.nbr_steps, 3))
 		self.accels = np.zeros((World.nbr_steps, 3))
-		self.sum_F = np.ones((World.nbr_steps, 3))*np.array([0, -World.gravity*self.masse, 0])
 		self.positions[0] = pos
 		self.velocities[0] = vits
 		self.R = 0.005
 		self.Rstar = self.R/2
 		self.vol = (4/3)*np.pi*pow(R, 3)
 		self.masse = self.vol*self.ro
+		self.sum_F = np.ones((World.nbr_steps, 3))*np.array([0, -World.gravity*self.masse, 0])	# Soumets la bille à son poids à chaque pas
 		Maize.Estar = Maize.young/(2-2*pow(Maize.poisson, 2))
 	
 	def PFD(self, i):
@@ -187,12 +169,25 @@ class Maize:
 		for plan in World.plans:
 			dist = distPlan(posi, plan)
 			if dist<self.R:
-				delta = dist-self.R
-				self.sum_F[i] += 4*self.Estar*delta*sqrt(self.R*delta)*plan.normal
+				delta = self.R - dist
+				self.sum_F[i] += 4*Maize.Estar*sqrt(self.R*delta)*delta*plan.normal/3
+				# self.accels[i] = 4*Maize.Estar*sqrt(self.R*delta)*delta*plan.normal/(3*self.masse)
+		# self.accels[i] -= array([0, World.gravity, 0])
 		# Amortissement
 		# Recherche les contact avec d'autres bille
 		# Frottements
 		self.accels[i] = self.sum_F[i]/self.masse
+
+	def calcVel(self, i):
+		"""
+		Intègre l'accélération pour obtenir la i-ème vitesse
+		"""
+		self.velocities[i] = self.velocities[i-1] + World.step*self.accels[i-1]
+	def calcPosi(self, i):
+		"""
+		Intègre la vitesse pour obtenir la i-ème position
+		"""
+		self.positions[i] = self.positions[i-1] + World.step*self.velocities[i]
 
 	def setInit(self, pos, vits):
 		self.positions[0] = pos
@@ -218,7 +213,7 @@ class Maize:
 World.init()
 plan = Plan(0, 0, array([0,0,0]))
 World.addPlan(plan)
-World.setTime(h=0.0001, tf=3)
+World.setTime(h=0.00001, tf=3)
 
 World.create_Maizes(1)
 World.maizes[0].setInit(array([-0.3, 0.2, 0]), array([0.2,0,0]))
