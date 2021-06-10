@@ -69,10 +69,12 @@ class World:
 	@classmethod
 	def process(cls):
 		# Calc accels
+		next_percent = 10
 		for i in range(World.nbr_steps-1):
-			percent = 100*i/World.nbr_steps
-			if percent%10<=0.0001:
-				print(str(int(percent))+"%")
+			percent = int(100*i/World.nbr_steps)
+			if percent==next_percent:
+				print(str(percent)+"%")
+				next_percent+=10
 			for maize in World.maizes:
 				posi = maize.getPosi(i)			# recupère la position de la bille à l'instant i
 				dplan = World.distPlan(posi, 0)		# calcule sa distance au plan
@@ -92,6 +94,7 @@ class World:
 				# print(maize.getVel(i))
 				# print(maize.getPosi(i))
 				# input()
+		print("100%")
 
 class Plan:
 	"""
@@ -163,7 +166,7 @@ class Maize:
 		self.accels[i] = accel
 
 World.init(Plan(np.array([0,1,0,0])))
-World.setTime(h=0.00001, tf=5)
+World.setTime(h=0.0001, tf=5)
 World.create_Maizes(2)
 
 maize = World.maizes[0]
