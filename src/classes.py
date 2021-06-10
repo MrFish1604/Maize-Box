@@ -1,5 +1,5 @@
 import numpy as np
-from numpy import cos, sin, array
+from numpy import cos, sin, array, pi, log
 from math import pow, sqrt
 
 def distPlan(posi, plan):
@@ -155,10 +155,13 @@ class Maize:
 		self.velocities[0] = vits
 		self.R = 0.005
 		self.Rstar = self.R/2
-		self.vol = (4/3)*np.pi*pow(R, 3)
+		self.vol = (4/3)*pi*pow(R, 3)
 		self.masse = self.vol*self.ro
 		self.sum_F = np.ones((World.nbr_steps, 3))*np.array([0, -World.gravity*self.masse, 0])	# Soumets la bille à son poids à chaque pas
 		Maize.Estar = Maize.young/(2-2*pow(Maize.poisson, 2))
+		lne = log(Maize.coef_resti_contact)
+		Maize.coef_amorti_contact = lne/sqrt(pow(pi,2) + pow(lne,2))
+		self.delta0 = 0
 	
 	def PFD(self, i):
 		"""
@@ -170,9 +173,11 @@ class Maize:
 			dist = distPlan(posi, plan)
 			if dist<self.R:
 				delta = self.R - dist
-				self.sum_F[i] += 4*Maize.Estar*sqrt(self.R*delta)*delta*plan.normal/3
-				# self.accels[i] = 4*Maize.Estar*sqrt(self.R*delta)*delta*plan.normal/(3*self.masse)
-		# self.accels[i] -= array([0, World.gravity, 0])
+				Kstar = 4*Maize.Estar*sqrt(self.R*delta)
+				self.sum_F[i] += Kstar*delta*plan.normal/3
+				deltaPoint = (delta - self.delta0)/World.step
+				self.sum_F[i] -= 2*Maize.coef_amorti_contact*deltaPoint*sqrt(Kstar*self.masse)*plan.normal
+				self.delta0 = delta
 		# Amortissement
 		# Recherche les contact avec d'autres bille
 		# Frottements
