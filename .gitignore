@@ -2,3 +2,4 @@
 classes.py.save
 simulations
 .vscode
+__pycache__
