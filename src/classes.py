@@ -3,6 +3,8 @@ from numpy import cos, sin, array, pi, log
 from numpy.linalg import norm
 from math import pow, sqrt
 from time import time
+import os
+import matplotlib.pyplot as plt
 
 PIs2 = pi/2
 PIs4 = pi/4
@@ -16,6 +18,9 @@ def distPlan(posi, equa):
 		N = abs(np.dot(equa, array([posi[0], posi[1], posi[2], 1])))
 		D = sqrt(np.dot(normal, normal))
 		return N/D
+
+def strListToFloat(L):
+	return [float(l) for l in L]
 
 class World:
 	"""
@@ -37,6 +42,74 @@ class World:
 		if World.notinitialized:
 			World.plans = []
 			World.notinitialized = False
+	
+	@classmethod
+	def show2D_maizes(cls, fig):
+		cls.maizes_repr = [plt.Circle((World.maizes[i].positions[0:0], World.maizes[i].positions[0:1]), radius=World.maizes[i].R) for i in range(cls.nbr_Maizes)]
+		for i in range(cls.nbr_Maizes):
+			# cls.maizes_repr[i] = plt.Circle((World.maizes[i].positions[0:0], World.maizes[i].positions[0:1]), radius=World.maizes[i].R)
+			r = cls.maizes_repr[i]
+			fig.gca().add_patch(r)
+	
+	@classmethod
+	def update2D_maizes(cls, i):
+		for j in range(cls.nbr_Maizes):
+			cls.maizes_repr[j].center = (cls.maizes[j].positions[i:0], cls.maizes.positions[i:1])
+
+	@classmethod
+	def init_save(cls, path, name):
+		"""
+		Initialise la méthode de sauvegarde de la simulation
+		Doit être utilisé après la création des maizes
+		"""
+		World.save_path = os.path.abspath(path) + "/" + name
+		if os.path.isfile(World.save_path):
+			print("Specify a directory")
+		elif not os.path.isdir(World.save_path):
+			os.makedirs(World.save_path)
+		with open(World.save_path + "/World.conf", 'w') as file:
+			file.write("maizes=" + str(World.nbr_Maizes) + ";\n")
+			file.write("tfinal=" + str(World.tfinal) + ";\n")
+			file.write("step=" + str(World.step) + ";")
+			# Rajouter la box
+		World.save_inited = True
+	
+	@classmethod
+	def load_save(cls, path):
+		if os.path.isdir(path):
+			World.save_path = os.path.abspath(path)
+			content = ""
+			with open(path+"/World.conf") as file:
+				content = file.read()
+			content = content.replace('\n', '')
+			lines = content.split(';')
+			conf = dict()
+			for line in lines:
+				if len(line)>0:
+					buff = line.split('=')
+					conf[buff[0]]=float(buff[1])
+			World.setTime(h=conf["step"], tf=conf["tfinal"])
+			World.create_Maizes(int(conf["maizes"]))
+			if World.nbr_Maizes==0:
+				return False
+			else:
+				for i in range(World.nbr_steps-1):
+					content = ""
+					with open(World.save_path + "/save." + str(i) + ".tsv", "r") as file:
+						content = file.read()
+					lines = content.split('\n')[1:]
+					for j in range(World.nbr_Maizes):
+						values = lines[j].split('\t')
+						maize = World.maizes[j]
+						# print(values[1:4])
+						# print(values[4:7])
+						# print(values[7:])
+						maize.accels[i] = array([float(val) for val in values[1:4]])
+						maize.velocities[i] = array([float(val) for val in values[4:7]])
+						maize.positions[i] = array([float(val) for val in values[7:]])
+			return True
+		else:
+			return False
 	
 	@classmethod
 	def addPlan(cls, plan):
@@ -98,8 +171,14 @@ class World:
 	@classmethod
 	def process(cls):
 		# Calc accels
+		if not World.save_inited:
+			print("Save is not initialized")
+			return False
+		path = World.save_path + "/save."
 		n_p = 10
 		for i in range(World.nbr_steps-1):
+			file = open(path+str(i)+".tsv", "w")
+			file.write("Temps(s)\tax\tay\taz\tvx\tvy\tvz\tx\ty\tz (UI)")
 			World.box.move2D(i)
 			World.box.save(i)
 			percent = int(100*i/World.nbr_steps)
@@ -110,6 +189,13 @@ class World:
 				maize.PFD(i)
 				maize.calcVel(i+1)
 				maize.calcPosi(i+1)
+				file.write('\n')
+				file.write("maize")
+				for v in [maize.accels[i], maize.velocities[i], maize.positions[i]]:
+						for j in range(3):
+							file.write('\t')
+							file.write(str(v[j]))
+			file.close()
 
 class Plan:
 	"""
@@ -247,7 +333,7 @@ class Box:
 		self.r_top.set_data(self.top.carX, self.top.carY)
 	
 	def reset(self):
-		self.move(0)
+		self.move2D(0)
 
 
 class Maize:
@@ -336,47 +422,49 @@ class Maize:
 		"""
 		self.accels[i] = accel
 
-# World.init()
-# plan = Plan(0, 0, array([0,0,0]))
-# World.addPlan(plan)
-World.setTime(h=0.00001, tf=5)
-box = Box((1, 0.3))
-World.addBox(box)
-World.create_Maizes(1)
-World.maizes[0].setInit(array([0, 0.15, 0]), array([0,0,0]))
-# World.maizes[1].setInit(array([-0.2, 0.15, 0]), array([0,0,0]))
-# World.maizes[1].setInit(array([0.2, 0.15, 0]), array([0.3,0,0]))
-t0 = time()
-World.process()
-print(time()-t0)
+if __name__=="__main__":
+	# World.init()
+	# plan = Plan(0, 0, array([0,0,0]))
+	# World.addPlan(plan)
+	World.setTime(h=0.00001, tf=5)
+	box = Box((1, 0.3))
+	World.addBox(box)
+	World.create_Maizes(1)
+	World.maizes[0].setInit(array([0, 0.15, 0]), array([0,0,0]))
+	# World.maizes[1].setInit(array([-0.2, 0.15, 0]), array([0,0,0]))
+	# World.maizes[1].setInit(array([0.2, 0.15, 0]), array([0.3,0,0]))
+	t0 = time()
+	World.init_save("../simulations", "test2")
+	World.process()
+	print(time()-t0)
 
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
+	import matplotlib.pyplot as plt
+	from matplotlib.animation import FuncAnimation
 
-X = World.maizes[0].positions[:, 0]
-Y = World.maizes[0].positions[:, 1]
+	X = World.maizes[0].positions[:, 0]
+	Y = World.maizes[0].positions[:, 1]
 
-fig = plt.figure()
-plt.axis("equal")
-box.show2D()
+	fig = plt.figure()
+	plt.axis("equal")
+	box.show2D()
 
-circle = plt.Circle((X[0], Y[0]), radius=World.maizes[0].R)
+	circle = plt.Circle((X[0], Y[0]), radius=World.maizes[0].R)
 
-ani_h=50
-nbr_frames = int(World.tfinal*ani_h*1000)
-new_h = int(ani_h*0.001/World.step)
+	ani_h=50
+	nbr_frames = int(World.tfinal*ani_h*1000)
+	new_h = int(ani_h*0.001/World.step)
 
-def init_ani():
-	fig.gca().add_patch(circle)
+	def init_ani():
+		fig.gca().add_patch(circle)
 
-def animate(i):
-	j = (new_h*i)%np.size(X,0)
-	if j<np.size(X,0):
-		circle.center = (X[j], Y[j])
-		box.update2D(j)
+	def animate(i):
+		j = (new_h*i)%np.size(X,0)
+		if j<np.size(X,0):
+			circle.center = (X[j], Y[j])
+			box.update2D(j)
 
-ani = FuncAnimation(fig, animate, init_func=init_ani, interval=ani_h, frames=nbr_frames)
-plt.gca().set_xlim(-0.7, 0.7)
-plt.gca().set_ylim(-0.6, 0.8)
-input("Press enter to display...")
-plt.show()
+	ani = FuncAnimation(fig, animate, init_func=init_ani, interval=ani_h, frames=nbr_frames)
+	plt.gca().set_xlim(-0.7, 0.7)
+	plt.gca().set_ylim(-0.6, 0.8)
+	input("Press enter to display...")
+	plt.show()
