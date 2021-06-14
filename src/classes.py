@@ -1,7 +1,7 @@
 import numpy as np
-from numpy import cos, sin, array, pi, log
+from numpy import cos, sin, array, pi, log, sqrt
 from numpy.linalg import norm
-from math import pow, sqrt
+from math import pow
 from time import time
 import os
 import matplotlib.pyplot as plt
@@ -19,8 +19,23 @@ def distPlan(posi, equa):
 		D = sqrt(np.dot(normal, normal))
 		return N/D
 
+def distPoints(point1, point2):
+	"""
+	Retourne la distance entre deux points de l'espace
+	"""
+	return sqrt(((point1 - point2)**2).sum())
+
 def strListToFloat(L):
+	"""
+	Useless for now
+	"""
 	return [float(l) for l in L]
+
+def makeUnit(vect):
+	"""
+	Retourne un vect de même sens et direction que vect mais de norme 1
+	"""
+	return vect/norm(vect)
 
 class World:
 	"""
@@ -294,7 +309,7 @@ class Box:
 		self.top.calc_equa()
 		# Save box state
 	
-	def evalDelta(self, maize, i):
+	def evalDeltaBox(self, maize, i):
 		"""
 		Retourne une liste des interpénétration de la bille avec chaque plan de la boite dans l'orde,
 		[bottom, top, left, right]
@@ -335,6 +350,13 @@ class Box:
 	def reset(self):
 		self.move2D(0)
 
+def evalDeltaMaize(maize1, maize2, i):
+	sumR = maize1.R + maize2.R
+	dist = distPoints(maize1.positions[i], maize2.positions[i])
+	if dist < sumR:
+		return sumR - dist
+	else:
+		return 0
 
 class Maize:
 	"""
@@ -349,6 +371,7 @@ class Maize:
 	Estar = young/(2-2*pow(poisson, 2))
 	lne = log(coef_resti_contact)
 	coef_amorti_contact = lne/sqrt(pow(pi,2) + pow(lne,2))
+	n_id = 0
 
 	def __init__(self, pos, vits, R=0.005):
 		"""
@@ -356,6 +379,8 @@ class Maize:
 		pos		array	position of the ball at t=0
 		vits	array	velocity of the ball at t=0
 		"""
+		self.ID = Maize.n_id
+		Maize.n_id+=1
 		self.positions = np.zeros((World.nbr_steps, 3))
 		self.velocities = np.zeros((World.nbr_steps, 3))
 		self.accels = np.zeros((World.nbr_steps, 3))
@@ -374,12 +399,12 @@ class Maize:
 		"""
 		posi = self.positions[i]
 		# Recherche les plans de la boite en contact avec la bille
-		deltas = World.box.evalDelta(self, i)
+		deltas = World.box.evalDeltaBox(self, i)
 		deltaPoints = array([0,0,0,0])
 		if i==0:
 			deltasPoint = deltas/World.step
 		else:
-			deltaPoints = (deltas - World.box.evalDelta(self, i-1))/World.step
+			deltaPoints = (deltas - World.box.evalDeltaBox(self, i-1))/World.step
 		# if deltas.any()!=0:
 		# 	print(deltas)
 		for j in range(4):
@@ -387,6 +412,16 @@ class Maize:
 			# Répulsion de Hertz et amortissement
 			self.sum_F[i] += (Kstar*deltas[j] - 2*Maize.coef_amorti_contact*deltaPoints[j]*sqrt(Kstar*self.masse))*World.box.index[j].normal
 		# Recherche les contact avec d'autres bille
+		for j in range(self.ID+1, World.nbr_Maizes):
+			maize = World.maizes[j]
+			delta = evalDeltaMaize(self, maize, i)
+			deltaPoint = 0 if i==0 else (delta - evalDeltaMaize(self, maize, i-1))/World.step
+			if delta!=0:
+				normal = makeUnit(maize.positions[i] - self.positions[i])
+				Kstar = 4*Maize.Estar*sqrt(self.R*delta/2)/3
+				F = (2*Maize.coef_amorti_contact*deltaPoint*sqrt(Kstar*self.masse/2) - Kstar*delta)*normal
+				self.sum_F[i] += F
+				maize.sum_F[i] -= F
 		# Frottements
 		self.accels[i] = self.sum_F[i]/self.masse
 
@@ -426,15 +461,15 @@ if __name__=="__main__":
 	# World.init()
 	# plan = Plan(0, 0, array([0,0,0]))
 	# World.addPlan(plan)
-	World.setTime(h=0.00001, tf=5)
+	World.setTime(h=0.00001, tf=2.5)
 	box = Box((1, 0.3))
 	World.addBox(box)
-	World.create_Maizes(1)
-	World.maizes[0].setInit(array([0, 0.15, 0]), array([0,0,0]))
-	# World.maizes[1].setInit(array([-0.2, 0.15, 0]), array([0,0,0]))
-	# World.maizes[1].setInit(array([0.2, 0.15, 0]), array([0.3,0,0]))
+	World.create_Maizes(2)
+	World.maizes[0].setInit(array([0, 0.1, 0]), array([0,0,0]))
+	World.maizes[1].setInit(array([0, 0.2, 0]), array([0,0,0]))
 	t0 = time()
-	World.init_save("../simulations", "test2")
+	World.init_save("../simulations", "2m_BnM_v2")
+	box.move2D(0)
 	World.process()
 	print(time()-t0)
 
@@ -443,12 +478,15 @@ if __name__=="__main__":
 
 	X = World.maizes[0].positions[:, 0]
 	Y = World.maizes[0].positions[:, 1]
+	X1 = World.maizes[1].positions[:, 0]
+	Y1 = World.maizes[1].positions[:, 1]
 
 	fig = plt.figure()
 	plt.axis("equal")
 	box.show2D()
 
 	circle = plt.Circle((X[0], Y[0]), radius=World.maizes[0].R)
+	circle1 = plt.Circle((X1[0], Y1[0]), radius=World.maizes[1].R)
 
 	ani_h=50
 	nbr_frames = int(World.tfinal*ani_h*1000)
@@ -456,11 +494,13 @@ if __name__=="__main__":
 
 	def init_ani():
 		fig.gca().add_patch(circle)
+		fig.gca().add_patch(circle1)
 
 	def animate(i):
 		j = (new_h*i)%np.size(X,0)
 		if j<np.size(X,0):
 			circle.center = (X[j], Y[j])
+			circle1.center = (X1[j], Y1[j])
 			box.update2D(j)
 
 	ani = FuncAnimation(fig, animate, init_func=init_ani, interval=ani_h, frames=nbr_frames)
