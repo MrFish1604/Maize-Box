@@ -465,10 +465,10 @@ if __name__=="__main__":
 	# World.init()
 	# plan = Plan(0, 0, array([0,0,0]))
 	# World.addPlan(plan)
-	World.setTime(h=0.00001, tf=2.5)
+	World.setTime(h=0.001, tf=2.5)
 	box = Box((1, 0.3))
 	World.addBox(box)
-	World.create_Maizes(10)
+	World.create_Maizes(50)
 	# World.maizes[0].setInit(array([0, 0.2, 0]), array([0,0,0]))
 	for i in range(World.nbr_Maizes):
 		World.maizes[i].setInit(array([i/80, 0.2, 0]), array([0,0,0]))
@@ -476,40 +476,43 @@ if __name__=="__main__":
 	World.init_save("../simulations", "10m_BnM_1e-5")
 	box.move2D(0)
 	World.process()
-	print(time()-t0)
+	tf = time() - t0
+	with open(World.save_path + "/progress.log", "a") as pfile:
+		pfile.write(str(tf))
+	# print(tf)
 
-	import matplotlib.pyplot as plt
-	from matplotlib.animation import FuncAnimation
+	# import matplotlib.pyplot as plt
+	# from matplotlib.animation import FuncAnimation
 
-	X = World.maizes[0].positions[:, 0]
-	Y = World.maizes[0].positions[:, 1]
-	X1 = World.maizes[1].positions[:, 0]
-	Y1 = World.maizes[1].positions[:, 1]
+	# X = World.maizes[0].positions[:, 0]
+	# Y = World.maizes[0].positions[:, 1]
+	# X1 = World.maizes[1].positions[:, 0]
+	# Y1 = World.maizes[1].positions[:, 1]
 
-	fig = plt.figure()
-	plt.axis("equal")
-	box.show2D()
+	# fig = plt.figure()
+	# plt.axis("equal")
+	# box.show2D()
 
-	circle = plt.Circle((X[0], Y[0]), radius=World.maizes[0].R)
-	circle1 = plt.Circle((X1[0], Y1[0]), radius=World.maizes[1].R)
+	# circle = plt.Circle((X[0], Y[0]), radius=World.maizes[0].R)
+	# circle1 = plt.Circle((X1[0], Y1[0]), radius=World.maizes[1].R)
 
-	ani_h=50
-	nbr_frames = int(World.tfinal*ani_h*1000)
-	new_h = int(ani_h*0.001/World.step)
+	# ani_h=50
+	# nbr_frames = int(World.tfinal*ani_h*1000)
+	# new_h = int(ani_h*0.001/World.step)
 
-	def init_ani():
-		fig.gca().add_patch(circle)
-		fig.gca().add_patch(circle1)
+	# def init_ani():
+	# 	fig.gca().add_patch(circle)
+	# 	fig.gca().add_patch(circle1)
 
-	def animate(i):
-		j = (new_h*i)%np.size(X,0)
-		if j<np.size(X,0):
-			circle.center = (X[j], Y[j])
-			circle1.center = (X1[j], Y1[j])
-			box.update2D(j)
+	# def animate(i):
+	# 	j = (new_h*i)%np.size(X,0)
+	# 	if j<np.size(X,0):
+	# 		circle.center = (X[j], Y[j])
+	# 		circle1.center = (X1[j], Y1[j])
+	# 		box.update2D(j)
 
-	ani = FuncAnimation(fig, animate, init_func=init_ani, interval=ani_h, frames=nbr_frames)
-	plt.gca().set_xlim(-0.7, 0.7)
-	plt.gca().set_ylim(-0.6, 0.8)
-	input("Press enter to display...")
-	plt.show()
+	# ani = FuncAnimation(fig, animate, init_func=init_ani, interval=ani_h, frames=nbr_frames)
+	# plt.gca().set_xlim(-0.7, 0.7)
+	# plt.gca().set_ylim(-0.6, 0.8)
+	# input("Press enter to display...")
+	# plt.show()
