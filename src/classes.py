@@ -189,6 +189,8 @@ class World:
 		if not World.save_inited:
 			print("Save is not initialized")
 			return False
+		with open(World.save_path + "/progress.log", "w") as progressFile:
+			progressFile.write("Started")
 		path = World.save_path + "/save."
 		n_p = 10
 		for i in range(World.nbr_steps-1):
@@ -198,6 +200,8 @@ class World:
 			World.box.save(i)
 			percent = int(100*i/World.nbr_steps)
 			if percent==n_p:
+				with open(World.save_path + "/progress.log", "a") as progressFile:
+					progressFile.write(str(percent)+"%")
 				print(str(percent)+"%")
 				n_p+=10
 			for maize in World.maizes:
