@@ -14,6 +14,10 @@ t0 = time()
 print(World.load_save(SAVE_PATH))
 print(time() - t0)
 
+ani_h=50
+nbr_frames = int(2*World.tfinal*ani_h*1000)
+new_h = int(ani_h*0.001/(2*World.step))
+
 box = Box((1, 0.3))
 World.addBox(box)
 
@@ -22,29 +26,17 @@ plt.axis("equal")
 
 box.reset()
 box.show2D()
-# World.show2D_maizes(fig)
-
-ani_h=50
-nbr_frames = int(2*World.tfinal*ani_h*1000)
-new_h = int(ani_h*0.001/(2*World.step))
-
-# maize = World.maizes[0]
-# maize2 = World.maizes[1]
-
-maizes = World.maizes
-
-circles = [plt.Circle((maizes[i].positions[0,0], maizes[i].positions[0,1]), radius=maizes[i].R) for i in range(World.nbr_Maizes)]
-# circle = plt.Circle((maize.positions[0,0], maize.positions[0,1]), radius=maize.R, color=(1,0,0))
-# circle2 = plt.Circle((maize2.positions[0,0], maize2.positions[0,1]), radius=maize2.R)
+World.show2D_maizes(fig)
 
 def init_ani():
 	for i in range(World.nbr_Maizes):
-		fig.gca().add_patch(circles[i])
+		fig.gca().add_patch(World.maizes_repr[i])
 
 def animate(i):
 	j = (new_h*i)%World.nbr_steps
+	# World.update2D_maizes(j)
 	for k in range(World.nbr_Maizes):
-		circles[k].center = (maizes[k].positions[j, 0], maizes[k].positions[j, 1])
+		World.maizes_repr[k].center = (World.maizes[k].positions[j, 0], World.maizes[k].positions[j, 1])
 	box.update2D(j)
 
 ani = FuncAnimation(fig, animate, init_func=init_ani, interval=ani_h, frames=nbr_frames, repeat=False)

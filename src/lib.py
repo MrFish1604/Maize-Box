@@ -60,16 +60,16 @@ class World:
 	
 	@classmethod
 	def show2D_maizes(cls, fig):
-		cls.maizes_repr = [plt.Circle((World.maizes[i].positions[0:0], World.maizes[i].positions[0:1]), radius=World.maizes[i].R) for i in range(cls.nbr_Maizes)]
-		for i in range(cls.nbr_Maizes):
-			# cls.maizes_repr[i] = plt.Circle((World.maizes[i].positions[0:0], World.maizes[i].positions[0:1]), radius=World.maizes[i].R)
-			r = cls.maizes_repr[i]
-			fig.gca().add_patch(r)
+		cls.maizes_repr = [plt.Circle((World.maizes[i].positions[0,0], World.maizes[i].positions[0,1]), radius=World.maizes[i].R) for i in range(cls.nbr_Maizes)]
+		# ca = fig.gca()	# Get Current Axe
+		# for i in range(cls.nbr_Maizes):
+			# cls.maizes_repr[i] = plt.Circle((World.maizes[i].positions[0,0], World.maizes[i].positions[0,1]), radius=World.maizes[i].R)
+			# ca.add_patch(cls.maizes_repr[i])
 	
 	@classmethod
 	def update2D_maizes(cls, i):
 		for j in range(cls.nbr_Maizes):
-			cls.maizes_repr[j].center = (cls.maizes[j].positions[i:0], cls.maizes.positions[i:1])
+			cls.maizes_repr[j].center = (cls.maizes[j].positions[i,0], cls.maizes[j].positions[i,1])
 
 	@classmethod
 	def init_save(cls, path, name):
@@ -105,10 +105,11 @@ class World:
 					conf[buff[0]]=float(buff[1])
 			World.setTime(h=conf["step"], tf=conf["tfinal"])
 			World.create_Maizes(int(conf["maizes"]))
+			ani_h = int(50*0.001/(2*World.step))
 			if World.nbr_Maizes==0:
 				return False
 			else:
-				for i in range(World.nbr_steps-1):
+				for i in range(0, World.nbr_steps-1, ani_h):
 					content = ""
 					with open(World.save_path + "/save." + str(i) + ".tsv", "r") as file:
 						content = file.read()
