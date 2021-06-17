@@ -61,10 +61,10 @@ class World:
 	@classmethod
 	def show2D_maizes(cls, fig):
 		cls.maizes_repr = [plt.Circle((World.maizes[i].positions[0,0], World.maizes[i].positions[0,1]), radius=World.maizes[i].R) for i in range(cls.nbr_Maizes)]
-		# ca = fig.gca()	# Get Current Axe
-		# for i in range(cls.nbr_Maizes):
-			# cls.maizes_repr[i] = plt.Circle((World.maizes[i].positions[0,0], World.maizes[i].positions[0,1]), radius=World.maizes[i].R)
-			# ca.add_patch(cls.maizes_repr[i])
+		ca = fig.gca()	# Get Current Axe
+		for i in range(cls.nbr_Maizes):
+			cls.maizes_repr[i] = plt.Circle((World.maizes[i].positions[0,0], World.maizes[i].positions[0,1]), radius=World.maizes[i].R)
+			ca.add_patch(cls.maizes_repr[i])
 	
 	@classmethod
 	def update2D_maizes(cls, i):

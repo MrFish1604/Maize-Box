@@ -30,18 +30,12 @@ box.reset()
 box.show2D()
 World.show2D_maizes(fig)
 
-def init_ani():
-	for i in range(World.nbr_Maizes):
-		fig.gca().add_patch(World.maizes_repr[i])
-
 def animate(i):
 	j = (new_h*i)%World.nbr_steps
-	# World.update2D_maizes(j)
-	for k in range(World.nbr_Maizes):
-		World.maizes_repr[k].center = (World.maizes[k].positions[j, 0], World.maizes[k].positions[j, 1])
+	World.update2D_maizes(j)
 	box.update2D(j)
 
-ani = FuncAnimation(fig, animate, init_func=init_ani, interval=ani_h, frames=nbr_frames, repeat=False)
+ani = FuncAnimation(fig, animate, interval=ani_h, frames=nbr_frames, repeat=False)
 
 # Save the video
 # writervideo = FFMpegWriter(fps=60)
