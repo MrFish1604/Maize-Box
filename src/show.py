@@ -1,4 +1,4 @@
-from classes import World, Box
+from lib import World, Box
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation, FFMpegWriter, PillowWriter
 from numpy import size
