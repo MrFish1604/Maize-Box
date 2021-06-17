@@ -90,7 +90,7 @@ class World:
 		World.save_inited = True
 	
 	@classmethod
-	def load_save(cls, path):
+	def load_World(cls, path):
 		if os.path.isdir(path):
 			World.save_path = os.path.abspath(path)
 			content = ""
@@ -105,27 +105,31 @@ class World:
 					conf[buff[0]]=float(buff[1])
 			World.setTime(h=conf["step"], tf=conf["tfinal"])
 			World.create_Maizes(int(conf["maizes"]))
-			ani_h = int(50*0.001/(2*World.step))
-			if World.nbr_Maizes==0:
-				return False
-			else:
-				for i in range(0, World.nbr_steps-1, ani_h):
-					content = ""
-					with open(World.save_path + "/save." + str(i) + ".tsv", "r") as file:
-						content = file.read()
-					lines = content.split('\n')[1:]
-					for j in range(World.nbr_Maizes):
-						values = lines[j].split('\t')
-						maize = World.maizes[j]
-						# print(values[1:4])
-						# print(values[4:7])
-						# print(values[7:])
-						maize.accels[i] = array([float(val) for val in values[1:4]])
-						maize.velocities[i] = array([float(val) for val in values[4:7]])
-						maize.positions[i] = array([float(val) for val in values[7:]])
 			return True
 		else:
 			return False
+
+	
+	@classmethod
+	def load_save(cls, ani_h):
+		if World.nbr_Maizes==0:
+			return False
+		else:
+			for i in range(0, World.nbr_steps-1, ani_h):
+				content = ""
+				with open(World.save_path + "/save." + str(i) + ".tsv", "r") as file:
+					content = file.read()
+				lines = content.split('\n')[1:]
+				for j in range(World.nbr_Maizes):
+					values = lines[j].split('\t')
+					maize = World.maizes[j]
+					# print(values[1:4])
+					# print(values[4:7])
+					# print(values[7:])
+					maize.accels[i] = array([float(val) for val in values[1:4]])
+					maize.velocities[i] = array([float(val) for val in values[4:7]])
+					maize.positions[i] = array([float(val) for val in values[7:]])
+		return True
 	
 	@classmethod
 	def addPlan(cls, plan):

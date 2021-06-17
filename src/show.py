@@ -11,12 +11,14 @@ SAVE_PATH = "../simulations/" + SIMU_NAME
 VIDEO_PATH = "../video/" + SIMU_NAME + ".mp4"
 
 t0 = time()
-print(World.load_save(SAVE_PATH))
-print(time() - t0)
+World.load_World(SAVE_PATH)
 
 ani_h=50
 nbr_frames = int(2*World.tfinal*ani_h*1000)
 new_h = int(ani_h*0.001/(2*World.step))
+
+World.load_save(new_h)
+print(time() - t0)
 
 box = Box((1, 0.3))
 World.addBox(box)
