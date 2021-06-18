@@ -206,20 +206,21 @@ class World:
 			print("Save is not initialized")
 			return False
 		with open(World.save_path + "/progress.log", "w") as progressFile:
-			progressFile.write("Started")
+			progressFile.write("Started\n")
 		path = World.save_path + "/save."
-		n_p = 10
+		n_p = 1
 		for i in range(World.nbr_steps-1):
 			file = open(path+str(i)+".tsv", "w")
 			file.write("Temps(s)\tax\tay\taz\tvx\tvy\tvz\tx\ty\tz (UI)")
 			World.box.move2D(i)
 			World.box.save(i)
 			percent = int(100*i/World.nbr_steps)
-			if percent==n_p:
+			if percent>=n_p:
+				toprint = str(percent)+"%\t"+str(i)+"\n"
 				with open(World.save_path + "/progress.log", "a") as progressFile:
-					progressFile.write(str(percent)+"%")
-				print(str(percent)+"%")
-				n_p+=10
+					progressFile.write(toprint)
+				print(toprint)
+				n_p+=1
 			for maize in World.maizes:
 				maize.PFD(i)
 				maize.calcVel(i+1)
@@ -269,6 +270,7 @@ class Plan:
 		"""
 		self.d = np.dot(-self.normal, self.point)
 		self.equa = array([self.normal[0], self.normal[1], self.normal[2], self.d])
+	
 	def calc_normal(self):
 		self.normal = array([-cos(self.theta)*sin(self.psi), cos(self.theta)*cos(self.psi), sin(self.theta)])
 		self.normal = self.normal/norm(self.normal)
@@ -425,8 +427,6 @@ class Maize:
 			deltasPoint = deltas/World.step
 		else:
 			deltaPoints = (deltas - World.box.evalDeltaBox(self, i-1))/World.step
-		# if deltas.any()!=0:
-		# 	print(deltas)
 		for j in range(4):
 			Kstar = 4*Maize.Estar*sqrt(self.R*deltas[j])/3
 			# Répulsion de Hertz et amortissement
@@ -442,7 +442,6 @@ class Maize:
 				F = (2*Maize.coef_amorti_contact*deltaPoint*sqrt(Kstar*self.masse/2) - Kstar*delta)*normal
 				self.sum_F[i] += F
 				maize.sum_F[i] -= F
-		# Frottements
 		self.accels[i] = self.sum_F[i]/self.masse
 
 	def calcVel(self, i):
@@ -481,20 +480,26 @@ if __name__=="__main__":
 	# World.init()
 	# plan = Plan(0, 0, array([0,0,0]))
 	# World.addPlan(plan)
-	World.setTime(h=0.001, tf=2.5)
+	World.setTime(h=1, tf=5)
 	box = Box((1, 0.3))
 	World.addBox(box)
-	World.create_Maizes(50)
+	World.create_Maizes(150)
 	# World.maizes[0].setInit(array([0, 0.2, 0]), array([0,0,0]))
+	d = World.maizes[0].R + 0.01	# distance entre les centres des billes
+	c = 0
+	l = 0.25
 	for i in range(World.nbr_Maizes):
-		World.maizes[i].setInit(array([i/80, 0.2, 0]), array([0,0,0]))
+		if c==24:
+			l-=d
+		c = i%25
+		World.maizes[i].setInit(array([c*d-0.3, l, 0]), array([0,0,0]))
 	t0 = time()
-	World.init_save("../simulations", "10m_BnM_1e-5")
+	World.init_save("../simulations", "150m_5s_1e-5")
 	box.move2D(0)
 	World.process()
 	tf = time() - t0
 	with open(World.save_path + "/progress.log", "a") as pfile:
-		pfile.write(str(tf))
+		pfile.write(str(round(tf,3)))
 	# print(tf)
 
 	# import matplotlib.pyplot as plt
