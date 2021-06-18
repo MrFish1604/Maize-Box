@@ -5,6 +5,7 @@ from math import pow
 from time import time
 import os
 import matplotlib.pyplot as plt
+import mpl_toolkits.mplot3d.art3d as art3d
 
 PIs2 = pi/2
 PIs4 = pi/4
@@ -60,16 +61,26 @@ class World:
 	
 	@classmethod
 	def show2D_maizes(cls, fig):
-		cls.maizes_repr = [plt.Circle((World.maizes[i].positions[0:0], World.maizes[i].positions[0:1]), radius=World.maizes[i].R) for i in range(cls.nbr_Maizes)]
+		cls.maizes_repr = [plt.Circle((World.maizes[i].positions[0,0], World.maizes[i].positions[0,1]), radius=World.maizes[i].R) for i in range(cls.nbr_Maizes)]
+		ca = fig.gca()	# Get Current Axe
 		for i in range(cls.nbr_Maizes):
-			# cls.maizes_repr[i] = plt.Circle((World.maizes[i].positions[0:0], World.maizes[i].positions[0:1]), radius=World.maizes[i].R)
-			r = cls.maizes_repr[i]
-			fig.gca().add_patch(r)
+			# cls.maizes_repr[i] = plt.Circle((World.maizes[i].positions[0,0], World.maizes[i].positions[0,1]), radius=World.maizes[i].R)
+			ca.add_patch(cls.maizes_repr[i])
+	@classmethod
+	def show3D_maizes(cls, ca):
+		cls.maizes_repr = [plt.plot(World.maizes[i].positions[0,0], World.maizes[i].positions[0,1], "or")[0] for i in range(cls.nbr_Maizes)]
 	
 	@classmethod
 	def update2D_maizes(cls, i):
 		for j in range(cls.nbr_Maizes):
-			cls.maizes_repr[j].center = (cls.maizes[j].positions[i:0], cls.maizes.positions[i:1])
+			cls.maizes_repr[j].center = (cls.maizes[j].positions[i,0], cls.maizes[j].positions[i,1])
+	
+	@classmethod
+	def update3D_maizes(cls, i):
+		for j in range(cls.nbr_Maizes):
+			cls.maizes_repr[j].set_data(cls.maizes[j].positions[i,0], cls.maizes[j].positions[i,1])
+			cls.maizes_repr[j].set_3d_properties(cls.maizes[j].positions[i,2])
+	
 
 	@classmethod
 	def init_save(cls, path, name):
@@ -90,7 +101,7 @@ class World:
 		World.save_inited = True
 	
 	@classmethod
-	def load_save(cls, path):
+	def load_World(cls, path):
 		if os.path.isdir(path):
 			World.save_path = os.path.abspath(path)
 			content = ""
@@ -105,26 +116,31 @@ class World:
 					conf[buff[0]]=float(buff[1])
 			World.setTime(h=conf["step"], tf=conf["tfinal"])
 			World.create_Maizes(int(conf["maizes"]))
-			if World.nbr_Maizes==0:
-				return False
-			else:
-				for i in range(World.nbr_steps-1):
-					content = ""
-					with open(World.save_path + "/save." + str(i) + ".tsv", "r") as file:
-						content = file.read()
-					lines = content.split('\n')[1:]
-					for j in range(World.nbr_Maizes):
-						values = lines[j].split('\t')
-						maize = World.maizes[j]
-						# print(values[1:4])
-						# print(values[4:7])
-						# print(values[7:])
-						maize.accels[i] = array([float(val) for val in values[1:4]])
-						maize.velocities[i] = array([float(val) for val in values[4:7]])
-						maize.positions[i] = array([float(val) for val in values[7:]])
 			return True
 		else:
 			return False
+
+	
+	@classmethod
+	def load_save(cls, ani_h):
+		if World.nbr_Maizes==0:
+			return False
+		else:
+			for i in range(0, World.nbr_steps-1, ani_h):
+				content = ""
+				with open(World.save_path + "/save." + str(i) + ".tsv", "r") as file:
+					content = file.read()
+				lines = content.split('\n')[1:]
+				for j in range(World.nbr_Maizes):
+					values = lines[j].split('\t')
+					maize = World.maizes[j]
+					# print(values[1:4])
+					# print(values[4:7])
+					# print(values[7:])
+					maize.accels[i] = array([float(val) for val in values[1:4]])
+					maize.velocities[i] = array([float(val) for val in values[4:7]])
+					maize.positions[i] = array([float(val) for val in values[7:]])
+		return True
 	
 	@classmethod
 	def addPlan(cls, plan):
