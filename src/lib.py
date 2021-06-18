@@ -480,7 +480,7 @@ if __name__=="__main__":
 	# World.init()
 	# plan = Plan(0, 0, array([0,0,0]))
 	# World.addPlan(plan)
-	World.setTime(h=1, tf=5)
+	World.setTime(h=1e-5, tf=5)
 	box = Box((1, 0.3))
 	World.addBox(box)
 	World.create_Maizes(150)
