@@ -1,5 +1,5 @@
 *test*
-classes.py.save
+*.save
 simulations
 .vscode
 __pycache__

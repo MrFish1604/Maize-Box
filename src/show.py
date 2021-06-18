@@ -24,18 +24,22 @@ box = Box((1, 0.3))
 World.addBox(box)
 
 fig = plt.figure()
-plt.axis("equal")
+# plt.axis("equal")
+ax = plt.gca(projection="3d")
 
-box.reset()
-box.show2D()
-World.show2D_maizes(fig)
+# box.reset()
+# box.show2D()
+World.show3D_maizes(ax)
+
+def init():
+	World.show3D_maizes(ax)
 
 def animate(i):
 	j = (new_h*i)%World.nbr_steps
-	World.update2D_maizes(j)
-	box.update2D(j)
+	print(j)
+	World.update3D_maizes(j)
 
-ani = FuncAnimation(fig, animate, interval=ani_h, frames=nbr_frames, repeat=False)
+ani = FuncAnimation(fig, animate, interval=ani_h, frames=nbr_frames, repeat=True)
 
 # Save the video
 # writervideo = FFMpegWriter(fps=60)
@@ -44,5 +48,9 @@ ani = FuncAnimation(fig, animate, interval=ani_h, frames=nbr_frames, repeat=Fals
 
 plt.gca().set_xlim(-0.7, 0.7)
 plt.gca().set_ylim(-0.6, 0.8)
+plt.gca().set_zlim(-0.6, 0.8)
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("z")
 input("Press enter to display...")
 plt.show()

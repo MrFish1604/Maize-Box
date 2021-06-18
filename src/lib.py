@@ -5,6 +5,7 @@ from math import pow
 from time import time
 import os
 import matplotlib.pyplot as plt
+import mpl_toolkits.mplot3d.art3d as art3d
 
 PIs2 = pi/2
 PIs4 = pi/4
@@ -63,13 +64,23 @@ class World:
 		cls.maizes_repr = [plt.Circle((World.maizes[i].positions[0,0], World.maizes[i].positions[0,1]), radius=World.maizes[i].R) for i in range(cls.nbr_Maizes)]
 		ca = fig.gca()	# Get Current Axe
 		for i in range(cls.nbr_Maizes):
-			cls.maizes_repr[i] = plt.Circle((World.maizes[i].positions[0,0], World.maizes[i].positions[0,1]), radius=World.maizes[i].R)
+			# cls.maizes_repr[i] = plt.Circle((World.maizes[i].positions[0,0], World.maizes[i].positions[0,1]), radius=World.maizes[i].R)
 			ca.add_patch(cls.maizes_repr[i])
+	@classmethod
+	def show3D_maizes(cls, ca):
+		cls.maizes_repr = [plt.plot(World.maizes[i].positions[0,0], World.maizes[i].positions[0,1], "or")[0] for i in range(cls.nbr_Maizes)]
 	
 	@classmethod
 	def update2D_maizes(cls, i):
 		for j in range(cls.nbr_Maizes):
 			cls.maizes_repr[j].center = (cls.maizes[j].positions[i,0], cls.maizes[j].positions[i,1])
+	
+	@classmethod
+	def update3D_maizes(cls, i):
+		for j in range(cls.nbr_Maizes):
+			cls.maizes_repr[j].set_data(cls.maizes[j].positions[i,0], cls.maizes[j].positions[i,1])
+			cls.maizes_repr[j].set_3d_properties(cls.maizes[j].positions[i,2])
+	
 
 	@classmethod
 	def init_save(cls, path, name):
