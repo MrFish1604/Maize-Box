@@ -3,54 +3,59 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation, FFMpegWriter, PillowWriter
 from numpy import size
 from time import time
+from os.path import isdir
+from math import pow
 
 # plt.rcParams['animation.ffmpeg_path'] = '/usr/bin/ffmpeg'
 
-SIMU_NAME = "10m_BnM_1e-5"
-SAVE_PATH = "../simulations/" + SIMU_NAME
+SIMU_NAME = "50m_5s_1e-5"
+SAVE_PATH = "/media/matt/128Go_CABILLOT/" + SIMU_NAME
 VIDEO_PATH = "../video/" + SIMU_NAME + ".mp4"
 
+print(SAVE_PATH, isdir(SAVE_PATH))
+
 t0 = time()
-World.load_World(SAVE_PATH)
+print(World.load_World(SAVE_PATH))
 
-ani_h=50
-nbr_frames = int(2*World.tfinal*ani_h*1000)
-new_h = int(ani_h*0.001/(2*World.step))
+fps = 60
+nbr_frames = int(fps*World.tfinal)	# s
+ani_h = World.tfinal/nbr_frames
+new_h = int(ani_h*World.nbr_steps/World.tfinal)		# Calcule le nombre de pas sauté
 
-World.load_save(new_h)
+World.load_save(new_h)	# Charge le monde à partir des fichiers
 print(time() - t0)
 
-box = Box((1, 0.3))
-World.addBox(box)
+print("ani_h=",ani_h)
+
+box = Box((1, 0.3))	# Crée une boite
+World.addBox(box)	# Ajoute la boite au monde
 
 fig = plt.figure()
-# plt.axis("equal")
-ax = plt.gca(projection="3d")
+plt.axis("equal")
 
-# box.reset()
-# box.show2D()
-World.show3D_maizes(ax)
+frames = [new_h*i for i in range(nbr_frames)]	# Crée la liste des indices de temps utilisé pour l'affichage
 
 def init():
-	World.show3D_maizes(ax)
+	"""
+	Initialise l'animation
+	"""
+	World.show2D_maizes(fig)
+	box.reset()	# Met la boite à la position 0
+	box.show2D()	# Prépare l'affichage de la boite
 
 def animate(i):
-	j = (new_h*i)%World.nbr_steps
-	print(j)
-	World.update3D_maizes(j)
+	# j = i%World.nbr_steps
+	World.update2D_maizes(i)	# Met à jour la position des billes
+	box.update2D(i)				# Met à jour la position de la boite
 
-ani = FuncAnimation(fig, animate, interval=ani_h, frames=nbr_frames, repeat=True)
+ani = FuncAnimation(fig, animate, init_func=init, interval=ani_h*1000, frames=frames, repeat=True)	# Crée l'animation
+
+plt.gca().set_xlim(-0.7, 0.7)	# Règle les limite de l'axe x
+plt.gca().set_ylim(-0.6, 0.8)	# Règle les limite de l'axe y
 
 # Save the video
-# writervideo = FFMpegWriter(fps=60)
-# writervideo = PillowWriter(fps=30) 
-# ani.save(VIDEO_PATH, writer=writervideo)
+writervideo = FFMpegWriter(fps=fps)
+ani.save(VIDEO_PATH, writer=writervideo)
 
-plt.gca().set_xlim(-0.7, 0.7)
-plt.gca().set_ylim(-0.6, 0.8)
-plt.gca().set_zlim(-0.6, 0.8)
-ax.set_xlabel("x")
-ax.set_ylabel("y")
-ax.set_zlabel("z")
 input("Press enter to display...")
 plt.show()
