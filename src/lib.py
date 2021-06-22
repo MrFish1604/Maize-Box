@@ -26,12 +26,6 @@ def distPoints(point1, point2):
 	"""
 	return sqrt(((point1 - point2)**2).sum())
 
-def strListToFloat(L):
-	"""
-	Useless for now
-	"""
-	return [float(l) for l in L]
-
 def makeUnit(vect):
 	"""
 	Retourne un vecteur de même sens et direction que vect mais de norme 1
@@ -39,49 +33,55 @@ def makeUnit(vect):
 	return vect/norm(vect)
 
 def evalDeltaMaize(maize1, maize2, i):
+	"""
+	Evalue l'interpénétration de maize1 et maize2 à l'instant i
+	"""
 	sumR = maize1.R + maize2.R
 	dist = distPoints(maize1.positions[i], maize2.positions[i])
 	return sumR-dist if dist<sumR else 0
 
 class World:
 	"""
-	This class should represent the world where balls will evolve.
+	Représente le monde dans lequel évolue les billes
 	"""
-	nbr_Maizes = 0
-	nbr_steps = 0	# Ne compte pas la 1er etape
-	step = 0
-	tfinal = 0
-	notinitialized = True
-	gravity = 9.81
-	t0 = 0
-
-	@classmethod
-	def init(cls):
-		"""
-		Initialise le monde
-		"""
-		if World.notinitialized:
-			World.plans = []
-			World.notinitialized = False
+	nbr_Maizes = 0	# Nombre de bille
+	nbr_steps = 0	# Nombre d'étapes
+	step = 0		# Pas
+	tfinal = 0		# Temps de simulations
+	gravity = 9.81	# Gravité du monde (ca peut être drole de la changer)
+	save_inited = False	# Vraie si la sauvegarde à été paramétré
 	
 	@classmethod
 	def show2D_maizes(cls, fig):
-		cls.maizes_repr = [plt.Circle((World.maizes[i].positions[0,0], World.maizes[i].positions[0,1]), radius=World.maizes[i].R, color=(i/50, i/100, 0)) for i in range(cls.nbr_Maizes)]
+		"""
+		Prépare l'affichage en 2D des billes
+		"""
+		cls.maizes_repr = [plt.Circle((World.maizes[i].positions[0,0], World.maizes[i].positions[0,1]), radius=World.maizes[i].R, color=(i/50, i/100, 0)) for i in range(cls.nbr_Maizes)]	# Crée des cercle pour toutes les billes
 		ca = fig.gca()	# Get Current Axe
 		for i in range(cls.nbr_Maizes):
-			# cls.maizes_repr[i] = plt.Circle((World.maizes[i].positions[0,0], World.maizes[i].positions[0,1]), radius=World.maizes[i].R)
-			ca.add_patch(cls.maizes_repr[i])
+			ca.add_patch(cls.maizes_repr[i])	# Ajoute les cercle au graphique
 	@classmethod
 	def show3D_maizes(cls, ca):
+		"""
+		Prépare l'affichage en 3D des billes
+		Il y a encore des problèmes
+		"""
 		cls.maizes_repr = [plt.plot(World.maizes[i].positions[0,0], World.maizes[i].positions[0,1], "or")[0] for i in range(cls.nbr_Maizes)]
 	
 	@classmethod
 	def update2D_maizes(cls, i):
+		"""
+		Met à jour l'affichage 2D des billes
+		"""
 		for j in range(cls.nbr_Maizes):
 			cls.maizes_repr[j].center = (cls.maizes[j].positions[i,0], cls.maizes[j].positions[i,1])
 	
 	@classmethod
 	def update3D_maizes(cls, i):
+		"""
+		Met à jour l'affichage 3D des billes
+		Il y a encore des problèmes
+		"""
 		for j in range(cls.nbr_Maizes):
 			cls.maizes_repr[j].set_data(cls.maizes[j].positions[i,0], cls.maizes[j].positions[i,1])
 			cls.maizes_repr[j].set_3d_properties(cls.maizes[j].positions[i,2])
@@ -90,15 +90,18 @@ class World:
 	@classmethod
 	def init_save(cls, path, name):
 		"""
-		Initialise la méthode de sauvegarde de la simulation
-		Doit être utilisé après la création des maizes
+		Initialise la sauvegarde de la simulation
+		Doit être utilisé après la création des billes
+		
+		path	le chemin vers le répertoire au sera placé la simulation
+		name	nom de la simulation
 		"""
 		World.save_path = os.path.abspath(path) + "/" + name
-		if os.path.isfile(World.save_path):
+		if os.path.isfile(World.save_path):	# path doit être un dossier
 			print("Specify a directory")
-		elif not os.path.isdir(World.save_path):
+		elif not os.path.isdir(World.save_path):	# si le dossier n'existe pas, le créé
 			os.makedirs(World.save_path)
-		with open(World.save_path + "/World.conf", 'w') as file:
+		with open(World.save_path + "/World.conf", 'w') as file:	# Crée un fichier de configuration pour plus de praticité
 			file.write("maizes=" + str(World.nbr_Maizes) + ";\n")
 			file.write("tfinal=" + str(World.tfinal) + ";\n")
 			file.write("step=" + str(World.step) + ";")
@@ -106,14 +109,23 @@ class World:
 		World.save_inited = True
 	
 	@classmethod
-	def load_World(cls, path):
-		if os.path.isdir(path):
-			World.save_path = os.path.abspath(path)
+	def load_World(cls, path, name):
+		"""
+		Charge les paramètres d'un monde depuis une sauvegarde
+		
+		path	le chemin vers le répertoire de la sauvegarde
+		name	nom de la simulation
+
+		Retourne True si le monde a chargé correctement
+		"""
+		if os.path.isdir(path):	# Si le dossier existe
+			World.save_path = os.path.abspath(path) + "/" + name
 			content = ""
-			with open(path+"/World.conf") as file:
+			with open(World.save_path+"/World.conf") as file:	# Lie le contenu
 				content = file.read()
 			content = content.replace('\n', '')
 			lines = content.split(';')
+			# Récupère les paramètres
 			conf = dict()
 			for line in lines:
 				if len(line)>0:
@@ -129,10 +141,17 @@ class World:
 	
 	@classmethod
 	def load_save(cls, ani_h):
+		"""
+		Charge la sauvegarde du monde
+
+		ani_h	le pas de l'animation
+		
+		Retourne True si la sauvegarde a chargé correctement
+		"""
 		if World.nbr_Maizes==0:
 			return False
 		else:
-			for i in range(0, World.nbr_steps-1, ani_h):
+			for i in range(0, World.nbr_steps-1, ani_h):	# Parcours les fichiers avec le pas de l'animation
 				content = ""
 				with open(World.save_path + "/save." + str(i) + ".tsv", "r") as file:
 					content = file.read()
@@ -140,41 +159,29 @@ class World:
 				for j in range(World.nbr_Maizes):
 					values = lines[j].split('\t')
 					maize = World.maizes[j]
-					# print(values[1:4])
-					# print(values[4:7])
-					# print(values[7:])
 					maize.accels[i] = array([float(val) for val in values[1:4]])
-					maize.velocities[i] = array([float(val) for val in values[4:7]])
+					maize.vitesses[i] = array([float(val) for val in values[4:7]])
 					maize.positions[i] = array([float(val) for val in values[7:]])
-		return True
-	
-	@classmethod
-	def addPlan(cls, plan):
-		"""
-		Ajoute un plan
-		"""
-		World.plans.append(plan)
-	@classmethod
-	def addPlans(cls, plans):
-		"""
-		Ajoute des plans
-		"""
-		for plan in plans:
-			World.plans.append(plan)
+			return True
 
 	@classmethod
 	def addBox(cls, box):
+		"""
+		Ajoute une boite dans le monde
+		"""
 		World.box = box
 	
 	@classmethod
 	def setTime(cls, h=None, nh=None, tf=None):
 		"""
-		Set times constants
+		Définie les constantes de temps
 		"""
 		a = tf!=None
 		b = nh!=None
 		c = h!=None
+		# Si le temps n'a pas déja été définie et si suffisament de constantes ont été données
 		if World.tfinal==0 and ((a and (b or c)) or (not(a) and b and c)):
+			# Calcule la constante manquante
 			if not a:	#if tf==None
 				World.nbr_steps = nh
 				World.step = h
@@ -190,45 +197,44 @@ class World:
 
 	@classmethod	
 	def create_Maizes(cls, nbr):
+		"""
+		Crée nbr de bille à l'origine et à vitesse initial nulle.
+		"""
 		World.nbr_Maizes = nbr
-		World.maizes = [Maize(array([0,0,0]), array([0,0,0])) for i in range(nbr)]
-	@classmethod
-	def create_plan(cls, equaCart):
-		World.plans.append(Plan(equaCart))
-
-	@classmethod
-	def distPlan(cls, posi, iplan):
-		"""
-		Evalue la distance d'une bille au plan (pour l'instant il n'y en a qu'un et c'est un vrai plan)
-		"""
-		N = (np.dot(cls.plans[iplan].equa, array([posi[0], posi[1], posi[2], 1])))
-		D = sqrt(np.dot(cls.plans[iplan].normal, cls.plans[iplan].normal))
-		return N/D
+		World.maizes = [Maize(array([0,0,0]), array([0,0,0]), id=i) for i in range(nbr)]
 	
 	@classmethod
 	def process(cls):
+		"""
+		Calcule la position de toutes les billes à chaque instant
+		
+		Retourne True si il n'y a pas de problème
+		"""
 		# Calc accels
 		if not World.save_inited:
 			print("Save is not initialized")
 			return False
 		path = World.save_path + "/save."
 		n_p = 10
-		for i in range(World.nbr_steps-1):
+		for i in range(World.nbr_steps-1):	# Pour chaque instant
 			file = open(path+str(i)+".tsv", "w")
 			file.write("Temps(s)\tax\tay\taz\tvx\tvy\tvz\tx\ty\tz (UI)")
-			World.box.move2D(i)
-			World.box.save(i)
+			World.box.move2D(i)	# Bouge la boite
+			World.box.save(i)	# Sauvegarde l'état de la boite
+			# Affiche l'avancement
 			percent = int(100*i/World.nbr_steps)
 			if percent==n_p:
 				print(str(percent)+"%")
 				n_p+=10
+			# Parcours les billes du monde
 			for maize in World.maizes:
-				maize.PFD(i)
-				maize.calcVel(i+1)
-				maize.calcPosi(i+1)
+				maize.PFD(i)	# Calcule la sommes des forces s'exerçant sur la bille
+				maize.calcVel(i+1) # Calcule la (i+1)-ème vitesse
+				maize.calcPosi(i+1)	# Calcule la i-ème vitesse
+				# Ecris tous dans un fichier
 				file.write('\n')
 				file.write("maize")
-				for v in [maize.accels[i], maize.velocities[i], maize.positions[i]]:
+				for v in [maize.accels[i], maize.vitesses[i], maize.positions[i]]:
 						for j in range(3):
 							file.write('\t')
 							file.write(str(v[j]))
@@ -237,11 +243,16 @@ class World:
 
 class Plan:
 	"""
-	Représente un plan
-	!!! Il faudra changer tout ca !!!
+	Représente un plan de l'espace
 	"""
 	n_id = 1
 	def __init__(self, psi, theta, point):
+		"""
+		Initialise l'objet
+		
+		psi, theta	les angles de rotations du plan
+		point	un point par lequel passe le plan
+		"""
 		self.ID = Plan.n_id
 		Plan.n_id+=1
 		self.psi = psi
@@ -264,17 +275,24 @@ class Plan:
 		self.calc_equa()
 	
 	def save(self, i):
+		"""
+		Sauvegarde l'état du plan à l'instant i
+		"""
 		self.states[i] = self.equa
 	
 	def calc_equa(self):
 		"""
-		Calcul les equations du plan
+		Calcul l'équation cartésienne du plan
 		"""
 		self.d = np.dot(-self.normal, self.point)
 		self.equa = array([self.normal[0], self.normal[1], self.normal[2], self.d])
+	
 	def calc_normal(self):
+		"""
+		Calcule un vecteur unitaire normal au plan
+		"""
 		self.normal = array([-cos(self.theta)*sin(self.psi), cos(self.theta)*cos(self.psi), sin(self.theta)])
-		self.normal = self.normal/norm(self.normal)
+		self.normal = makeUnit(self.normal)
 	
 	def calc_car(self, size):
 		"""
@@ -286,31 +304,37 @@ class Plan:
 		self.carY[1] = self.point[1] + size*sin(self.psi)
 
 	def show2D(self, size, style="-k"):
+		"""
+		Prépare l'affichage 2D du plan
+		"""
 		self.calc_car(size)
 		self.repr, = plt.plot(self.carX, self.carY, style)
 		return self.repr
-	
-	def update2D(self, i, size):
-		pass
 
 class Box:
 	"""
 	Représente une boite
 	"""
-	def __init__(self, dim, ampli=PIs4, pulse=2.5133):	#	pi/4=0.7854		2pi/2.5 = 2.5133
-		self.dim = dim
+	def __init__(self, dim, ampli=PIs4, pulse=2.5133):	#	pulse = 2pi/2.5 = 2.5133
+		"""
+		Initialise l'objet
+		"""
+		self.dim = dim	# Dimension de la boite
 		self.demiH = self.dim[1]/2
 		self.demiL = self.dim[0]/2
-		self.ampli = ampli
-		self.pulse = pulse
-		self.bot = Plan(0, 0, np.array([0,0,0]))
-		self.top = Plan(pi, 0, np.array([0, dim[1], 0]))
-		self.left = Plan(-PIs2, 0, np.array([-self.demiL, self.demiH, 0]))
-		self.right = Plan(PIs2, 0, np.array([self.demiL, self.demiH, 0]))
-		self.index = [self.bot, self.top, self.left, self.right]
-		self.move2D(0)
+		self.ampli = ampli	# amplitude du mouvement de rotation
+		self.pulse = pulse	# pulsation de la rotation
+		self.bot = Plan(0, 0, np.array([0,0,0]))								# Plan de la boite
+		self.top = Plan(pi, 0, np.array([0, dim[1], 0]))						# Plan de la boite
+		self.left = Plan(-PIs2, 0, np.array([-self.demiL, self.demiH, 0]))		# Plan de la boite
+		self.right = Plan(PIs2, 0, np.array([self.demiL, self.demiH, 0]))		# Plan de la boite
+		self.index = [self.bot, self.top, self.left, self.right]	# Pour parcourir les plans
+		self.reset()	# Place la boite à sa position initiale
 	
 	def move2D(self, i):
+		"""
+		Fait une rotation de la boite selon l'axe z
+		"""
 		# Move bottom
 		self.bot.psi = self.ampli*sin(self.pulse*World.step*i)
 		self.bot.calc_normal()
@@ -330,7 +354,6 @@ class Box:
 		self.top.calc_normal()
 		self.top.point = self.dim[1]*self.bot.normal
 		self.top.calc_equa()
-		# Save box state
 	
 	def evalDeltaBox(self, maize, i):
 		"""
@@ -345,24 +368,36 @@ class Box:
 		return deltas
 	
 	def save(self, i):
+		"""
+		Sauvegarde l'état de la boite
+		"""
 		self.bot.save(i)
 		self.top.save(i)
 		self.left.save(i)
 		self.right.save(i)
 	
 	def calc_car(self):
+		"""
+		Calcul les equations caractéristique des plan de la boite
+		"""
 		self.bot.calc_car(self.demiL)
 		self.left.calc_car(self.demiH)
 		self.right.calc_car(self.demiH)
 		self.top.calc_car(self.demiL)
 	
 	def show2D(self):
+		"""
+		Prépare l'affichage 2D de la boite
+		"""
 		self.r_bot = self.bot.show2D(self.demiL)
 		self.r_top = self.top.show2D(self.demiL)
 		self.r_left = self.left.show2D(self.demiH)
 		self.r_right = self.right.show2D(self.demiH)
 	
 	def update2D(self, i):
+		"""
+		Met à jour l'affiche de la boite à l'instant i
+		"""
 		self.move2D(i)
 		self.calc_car()
 		self.r_bot.set_data(self.bot.carX, self.bot.carY)
@@ -371,28 +406,31 @@ class Box:
 		self.r_top.set_data(self.top.carX, self.top.carY)
 	
 	def reset(self):
+		"""
+		Place la boite à sa position initiale
+		"""
 		self.move2D(0)
 
 class Maize:
 	"""
-	This class represent a ball of maize
+	Représente une bille de maïsse
 	"""
-	ro = 1180	# kg/m3
-	coef_resti_contact = 0.5
-	young = 340e6
-	fm = 0.86
-	fa = 0.54
-	poisson = 0.3
-	Estar = young/(2-2*pow(poisson, 2))
-	lne = log(coef_resti_contact)
-	coef_amorti_contact = lne/sqrt(pow(pi,2) + pow(lne,2))
+	ro = 1180	# kg/m3					# Constante du maïsse
+	coef_resti_contact = 0.5			# Constante du maïsse
+	young = 340e6						# Constante du maïsse
+	fm = 0.86							# Constante du maïsse
+	fa = 0.54							# Constante du maïsse
+	poisson = 0.3						# Constante du maïsse
+	Estar = young/(2-2*pow(poisson, 2))	# Constante du maïsse
+	lne = log(coef_resti_contact)		# Constante du maïsse
+	coef_amorti_contact = lne/sqrt(pow(pi,2) + pow(lne,2))	# Constante du maïsse
 	n_id = 0
 
 	def __init__(self, pos, vits, R=0.005, id=None):
 		"""
-		initialize a maize
-		pos		array	position of the ball at t=0
-		vits	array	velocity of the ball at t=0
+		Initialise une bille
+		pos		array	position de la bille à t=0
+		vits	array	vitesse de la bille à t=0
 		"""
 		if id==None:
 			self.ID = Maize.n_id
@@ -400,20 +438,19 @@ class Maize:
 		else:
 			self.ID = id
 		self.positions = np.zeros((World.nbr_steps, 3))
-		self.velocities = np.zeros((World.nbr_steps, 3))
+		self.vitesses = np.zeros((World.nbr_steps, 3))
 		self.accels = np.zeros((World.nbr_steps, 3))
 		self.positions[0] = pos
-		self.velocities[0] = vits
-		self.R = 0.005
-		self.Rstar = self.R/2
+		self.vitesses[0] = vits
+		self.R = R
+		self.Rstar = R/2
 		self.vol = (4/3)*pi*pow(R, 3)
 		self.masse = self.vol*self.ro
 		self.sum_F = np.ones((World.nbr_steps, 3))*np.array([0, -World.gravity*self.masse, 0])	# Soumets la bille à son poids à chaque pas
-		self.delta0 = 0
 	
 	def PFD(self, i):
 		"""
-		Cherche les forces qui agissent sur la bille
+		Cherche les forces qui agissent sur la bille, fait leur somme et calcule l'accélération à l'instant i
 		"""
 		posi = self.positions[i]
 		# Recherche les plans de la boite en contact avec la bille
@@ -423,8 +460,6 @@ class Maize:
 			deltasPoint = deltas/World.step
 		else:
 			deltaPoints = (deltas - World.box.evalDeltaBox(self, i-1))/World.step
-		# if deltas.any()!=0:
-		# 	print(deltas)
 		for j in range(4):
 			if deltas[j]!=0:
 				Kstar = 4*Maize.Estar*sqrt(self.R*deltas[j])/3
@@ -446,31 +481,51 @@ class Maize:
 	def calcVel(self, i):
 		"""
 		Intègre l'accélération pour obtenir la i-ème vitesse
+
+		/!\ la i-ème accélération est à l'indice i-1
 		"""
-		self.velocities[i] = self.velocities[i-1] + World.step*self.accels[i-1]
+		self.vitesses[i] = self.vitesses[i-1] + World.step*self.accels[i-1]
 	def calcPosi(self, i):
 		"""
 		Intègre la vitesse pour obtenir la i-ème position
 		"""
-		self.positions[i] = self.positions[i-1] + World.step*self.velocities[i]
+		self.positions[i] = self.positions[i-1] + World.step*self.vitesses[i]
 
 	def setInit(self, pos, vits):
+		"""
+		Définie les conditions initiales de la bille
+		"""
 		self.positions[0] = pos
-		self.velocities[0] = vits
+		self.vitesses[0] = vits
 	
 	def getPosi(self, i):
+		"""
+		Retourne la i-ème position
+		"""
 		return self.positions[i]
 	def getVel(self, i):
-		return self.velocities[i]
+		"""
+		Retourne la i-ème vitesse
+		"""
+		return self.vitesses[i]
 	def getAccel(self, i):
+		"""
+		Retourne la i-ème accélération
+		"""
 		return self.accels[i]
 	
 	def setPosi(self, posi, i):
+		"""
+		Définie la i-ème position
+		"""
 		self.positions[i] = posi
 	def setVel(self, vel, i):
-		self.velocities[i] = vel
+		"""
+		Définie la i-ème vitesse
+		"""
+		self.vitesses[i] = vel
 	def setAccel(self, accel, i):
 		"""
-		Set la i-eme ligne d'accels
+		Définie la i-ème accélération
 		"""
 		self.accels[i] = accel
