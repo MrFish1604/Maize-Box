@@ -48,7 +48,7 @@ class World:
 	nbr_steps = 0	# Nombre d'étapes
 	step = 0		# Pas
 	tfinal = 0		# Temps de simulations
-	gravity = 9.81	# Gravité du monde (ca peut être drole de la changer)
+	gravity = 9.81/2	# Gravité du monde (ca peut être drole de la changer)
 	save_inited = False	# Vraie si la sauvegarde à été paramétré
 	
 	@classmethod

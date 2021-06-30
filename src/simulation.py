@@ -2,8 +2,8 @@ from lib import World, Maize, Box
 from numpy import array
 from time import time
 
-SAVE_PATH = "./"	# Répertoire de la simulation
-SAVE_NAME = "super_simulation"	# Nom de la simulation
+SAVE_PATH = "/media/matt/128Go_CABILLOT/simulations"	# Répertoire de la simulation
+SAVE_NAME = "1m_2grav_1e-5"	# Nom de la simulation
 
 World.setTime(h=1e-5, tf=5) # Initialise les paramètre de temps
 box = Box((1, 0.3)) # Crée une boite de 1m * 0.3m

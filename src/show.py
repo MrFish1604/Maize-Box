@@ -6,15 +6,15 @@ from time import time
 from os.path import isdir
 from math import pow
 
-SIMU_NAME = "super_simulation"
-SAVE_PATH = "./"
-VIDEO_PATH = "./" + SIMU_NAME + ".mp4"
+SIMU_NAME = "1m_2grav_1e-5"
+SAVE_PATH = "/media/matt/128Go_CABILLOT/simulations"
+VIDEO_PATH = "../video/" + SIMU_NAME + ".mp4"
 
 t0 = time()
 if World.load_World(SAVE_PATH, SIMU_NAME):
-	fps = 60	# frames per seconds
-	nbr_frames = int(fps*World.tfinal)	# Nombre de frames
-	ani_h = World.tfinal/nbr_frames	# Interval de rafraichissement de l'animation
+	ani_h = 0.05	# Interval de rafraichissement de l'animation
+	nbr_frames = int(World.tfinal/ani_h)	# Nombre de frames
+	fps = int(nbr_frames/World.tfinal)
 	# ani_h=0.05
 	new_h = int(ani_h*World.nbr_steps/World.tfinal)	# Calcule le nombre de pas à sauté
 
@@ -47,14 +47,7 @@ if World.load_World(SAVE_PATH, SIMU_NAME):
 		plt.gca().set_xlim(-0.7, 0.7)	# Règle les limite de l'axe x
 		plt.gca().set_ylim(-0.6, 0.8)	# Règle les limite de l'axe y
 
-		# Sauvegarde la vidéo
-		print("Saving video...")
-		writervideo = FFMpegWriter(fps=fps)
-		ani.save(VIDEO_PATH, writer=writervideo)
-
 		input("Press enter to display...")
-		plt.show()	# N'est pas en temps réel car l'ordinateur n'est pas capable d'executer animate (plus toute la blackbox qu'est matplotlib) en moins de ani_h secondes
-		#			La vidéo sera cependant en temps réel
-		#			Pour avoir un affiche en temps réel, il faut fixé ani_h a 0.05s
+		plt.show()	# Affiche l'animation en temps réel
 else:
 	print("Can't load the world")
