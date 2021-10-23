@@ -2,13 +2,13 @@ from lib import World, Maize, Box
 from numpy import array
 from time import time
 
-SAVE_PATH = "/media/matt/128Go_CABILLOT/simulations"	# Répertoire de la simulation
-SAVE_NAME = "1m_2grav_1e-5"	# Nom de la simulation
+SAVE_PATH = "/home/matt/workspace/Maize-Box/simu"	# Répertoire de la simulation
+SAVE_NAME = "2m_1e-5"	# Nom de la simulation
 
 World.setTime(h=1e-5, tf=5) # Initialise les paramètre de temps
 box = Box((1, 0.3)) # Crée une boite de 1m * 0.3m
 World.addBox(box)   # Ajoute la boite au monde
-World.create_Maizes(1) # Crée 50 bille de même taille dans le monde
+World.create_Maizes(2) # Crée 50 billes de même taille dans le monde
 
 # Initialise la position et la vitesse initial de toutes les billes
 d = World.maizes[0].R + 0.01	# distance entre les centres des billes

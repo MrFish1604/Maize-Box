@@ -6,8 +6,8 @@ from time import time
 from os.path import isdir
 from math import pow
 
-SIMU_NAME = "1m_2grav_1e-5"
-SAVE_PATH = "/media/matt/128Go_CABILLOT/simulations"
+SIMU_NAME = "2m_1e-5"
+SAVE_PATH = "/home/matt/workspace/Maize-Box/simu"
 VIDEO_PATH = "../video/" + SIMU_NAME + ".mp4"
 
 t0 = time()
